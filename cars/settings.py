@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+import os
 from pathlib import Path
 import dj_database_url
 
@@ -26,7 +27,15 @@ SECRET_KEY = 'django-insecure-rvpd=v1#_z$5$d_uav(o#$y0+-to%)=noxf(@sjup+zume)=-6
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['24.199.122.100']
+
+ALLOWED_HOSTS = [
+    # This is the hostname Render injects for you:
+    os.getenv("RENDER_EXTERNAL_HOSTNAME"),
+    # local IP or localhost if you still hit it directly:
+    "localhost",
+    "24.199.122.100",
+]
+
 
 
 # Application definition
