@@ -130,26 +130,6 @@ USE_I18N = True
 USE_TZ = True
 
 
-MIDDLEWARE = [
-    "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
-
-    # ensure sessions come before auth
-    "django.contrib.sessions.middleware.SessionMiddleware",
-
-    # common + csrf
-    "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
-
-    # auth and messages in the correct order
-    "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "django.contrib.messages.middleware.MessageMiddleware",
-
-    # any other middleware you have…
-    "django.middleware.clickjacking.XFrameOptionsMiddleware",
-]
-
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
