@@ -1,0 +1,102 @@
+{% extends 'main/base.html' %}
+{% block title %}Inventory{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">Inventory List</h2>
+
+  <div class="d-flex justify-content-center gap-3 mb-4">
+    {% include 'main/_dashboard_buttons.html' %}
+  </div>
+
+  {% if inventory %}
+  <table class="table table-bordered table-hover">
+    <thead class="table-dark">
+      <tr>
+        <th>Item Number</th>
+        <th>Name</th>
+        <th>Quantity</th>
+        <th>Price</th>
+        <th class="text-end">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in inventory %}
+        <tr id="inventory-row-{{ item.id }}">
+          <td>{{ item.item_number }}</td>
+          <td>{{ item.item_name }}</td>
+          <td id="quantity-{{ item.id }}">{{ item.item_quantity }}</td>
+          <td>{{ item.item_price }} ₾</td>
+          <td class="text-end">
+            <a href="{% url 'edit_inventory' item.id %}" class="btn btn-sm btn-primary">Edit</a>
+            <button class="btn btn-sm btn-danger"
+        data-id="{{ item.id }}"
+        data-name="{{ item.item_name|escapejs }}"
+        onclick="confirmDelete(this)">
+  Delete
+</button>
+
+        </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p>No inventory items found.</p>
+  {% endif %}
+</div>
+
+<script>
+  function confirmDelete(button) {
+    const itemId = button.getAttribute('data-id');
+    const itemName = button.getAttribute('data-name');
+    const csrfToken = "{{ csrf_token }}";
+
+    const quantityElement = document.getElementById(`quantity-${itemId}`);
+    if (!quantityElement) {
+      alert("Quantity element not found.");
+      return;
+    }
+
+    const quantity = parseInt(quantityElement.innerText);
+
+    // Edge case: Not a number
+    if (isNaN(quantity)) {
+      alert(`Invalid quantity for item "${itemName}". Please check the data.`);
+      return;
+    }
+
+    const message = quantity > 1
+      ? `Item "${itemName}" has quantity ${quantity}. Do you want to remove 1 from stock?`
+      : `Item "${itemName}" has quantity 1. Do you want to delete it completely?`;
+
+    if (confirm(message)) {
+      fetch(`/inventory/delete/${itemId}/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': csrfToken,
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'decremented') {
+          quantityElement.innerText = data.new_quantity;
+        } else if (data.status === 'deleted') {
+          document.getElementById(`inventory-row-${itemId}`).remove();
+        } else {
+          alert('Something went wrong.');
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        alert("Failed to delete item.");
+      });
+    }
+  }
+</script>
+
+
+
+{% endblock %}
+

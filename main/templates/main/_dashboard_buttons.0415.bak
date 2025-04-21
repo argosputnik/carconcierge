@@ -1,0 +1,91 @@
+{% if user.role == 'owner' %}
+<div class="dashboard-buttons-fixed">
+
+
+    <!-- Users Dropdown -->
+    <div class="btn-group dashboard-btn-group">
+     <button class="btn btn-dark dropdown-toggle dashboard-btn" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+	Users
+      </button>
+      <ul class="dropdown-menu" aria-labelledby="userDropdown">
+
+        <!-- Concierge Submenu -->
+        <li class="dropdown-submenu dropend">
+          <a class="dropdown-item dropdown-toggle" href="#">Concierge</a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{% url 'add_concierge' %}">Add</a></li>
+            <li><a class="dropdown-item" href="{% url 'view_concierges' %}">View</a></li>
+          </ul>
+        </li>
+
+        <!-- Dealer Submenu -->
+        <li class="dropdown-submenu dropend">
+          <a class="dropdown-item dropdown-toggle" href="#">Dealer</a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{% url 'add_dealer' %}">Add</a></li>
+            <li><a class="dropdown-item" href="{% url 'view_dealers' %}">View</a></li>
+          </ul>
+        </li>
+
+        <!-- Owner Submenu -->
+        <li class="dropdown-submenu dropend">
+          <a class="dropdown-item dropdown-toggle" href="#">Owner</a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{% url 'add_owner' %}">Add</a></li>
+            <li><a class="dropdown-item" href="{% url 'view_owners' %}">View</a></li>
+          </ul>
+        </li>
+
+      </ul>
+    </div>
+
+    <!-- Inventory Dropdown with Submenu -->
+      <div class="btn-group dashboard-btn-group">
+    <button class="btn btn-dark dropdown-toggle dashboard-btn" type="button" id="inventoryDropdown" data-bs-toggle="dropdown" aria-expanded="false">  
+      Inventory
+      </button>
+      <ul class="dropdown-menu" aria-labelledby="inventoryDropdown">
+        <li class="dropdown-submenu dropend">
+          <a class="dropdown-item dropdown-toggle" href="#">Inventory</a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{% url 'add_inventory' %}">Add</a></li>
+            <li><a class="dropdown-item" href="{% url 'view_inventory' %}">View</a></li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Back to Dashboard -->
+    <a href="{% url 'owner_dashboard' %}" class="btn btn-dark">Back to Dashboard</a>
+  </div>
+
+
+{% else %}
+<div class="d-flex gap-3 mb-3">
+
+  {% if user.role == 'customer' %}
+    <!-- Only customers see these -->
+    <a href="{% url 'create_service_request' %}" class="btn btn-dark">Request Service</a>
+
+    <div class="dropdown">
+      <button class="btn btn-dark dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        My Cars
+      </button>
+      <ul class="dropdown-menu">
+        <li><a class="dropdown-item" href="{% url 'my_cars' %}">View</a></li>
+        <li><a class="dropdown-item" href="{% url 'add_car' %}">Add</a></li>
+      </ul>
+    </div>
+  {% endif %}
+
+  <!-- Role-specific dashboard button -->
+  {% if user.role == 'customer' %}
+    <a href="{% url 'customer_dashboard' %}" class="btn btn-dark">Back to Dashboard</a>
+  {% elif user.role == 'concierge' %}
+    <a href="{% url 'concierge_dashboard' %}" class="btn btn-dark">Back to Dashboard</a>
+  {% elif user.role == 'dealer' %}
+    <a href="{% url 'dealer_dashboard' %}" class="btn btn-dark">Back to Dashboard</a>
+  {% endif %}
+</div>
+{% endif %}
+

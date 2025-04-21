@@ -1,0 +1,31 @@
+{% extends 'main/base.html' %}
+{% block title %}Add Owner{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+  <h2>Add New Owner</h2>
+
+   <!-- Dashboard Buttons -->
+   <div class="d-flex justify-content-center gap-3 mb-4">
+    {% include 'main/_dashboard_buttons.html' %}
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {% for field in form %}
+      <div class="mb-3">
+        {{ field.label_tag }}
+        {{ field }}
+        {% if field.errors %}
+          <div class="text-danger">{{ field.errors|striptags }}</div>
+        {% endif %}
+      </div>
+    {% endfor %}
+    <button type="submit" class="btn btn-dark">Create Owner</button>
+  </form>
+</div>
+{% endblock %}
+
+

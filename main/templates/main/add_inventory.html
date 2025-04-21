@@ -1,0 +1,23 @@
+i{% extends 'main/base.html' %}
+
+{% block title %}Add Inventory{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">Add Inventory Item</h2>
+
+  <div class="d-flex justify-content-center gap-3 mb-3">
+    {% include 'main/_dashboard_buttons.html' %}
+  </div>
+
+  <form method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <button type="submit" class="btn btn-primary">Add Item</button>
+    <a href="{% url 'view_inventory' %}" class="btn btn-secondary">Cancel</a>
+  </form>
+</div>
+{% endblock %}
+
+

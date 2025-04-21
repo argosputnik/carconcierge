@@ -1,0 +1,69 @@
+{% extends 'main/base.html' %}
+{% block title %}Edit Form{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <h2>Edit Your Details</h2>
+  
+  <form method="post">
+    {% csrf_token %}
+
+    <!-- Render other fields normally -->
+    {% for field in form %}
+      {% if field.name not in "job_specialty job_specialty_other" %}
+        <div class="mb-3">
+          {{ field.label_tag }}
+          {{ field }}
+          {% if field.errors %}
+            <div class="text-danger small">{{ field.errors|striptags }}</div>
+          {% endif %}
+        </div>
+      {% endif %}
+    {% endfor %}
+
+    <!-- Job Specialties (Checkboxes) -->
+    <div class="mb-3">
+      <label class="form-label">{{ form.job_specialty.label }}</label>
+      <div>
+        {% for checkbox in form.job_specialty %}
+          <div class="form-check">
+            {{ checkbox.tag }} {{ checkbox.choice_label }}
+          </div>
+          {% if checkbox.choice_label == "Other" %}
+            <!-- Container for 'Other' input field -->
+            <div id="other-specialty-container" class="mt-2 ms-4" style="display: none;">
+              {{ form.job_specialty_other }}
+              {% if form.job_specialty_other.errors %}
+                <div class="text-danger small">{{ form.job_specialty_other.errors|striptags }}</div>
+              {% endif %}
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save Changes</button>
+  </form>
+</div>
+
+<!-- JavaScript to toggle the "Other" input field -->
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const checkboxes = document.querySelectorAll('input[name="job_specialty"]');
+    const otherInput = document.getElementById('id_job_specialty_other');
+    const otherContainer = document.getElementById('other-specialty-container');
+
+    function toggleOtherField() {
+      // Check if the 'Other' checkbox is checked
+      const isChecked = Array.from(checkboxes).some(cb => cb.value === 'Other' && cb.checked);
+      otherContainer.style.display = isChecked ? 'block' : 'none';
+      if (!isChecked) otherInput.value = '';
+    }
+
+    checkboxes.forEach(cb => cb.addEventListener('change', toggleOtherField));
+    // Run toggleOtherField on load in case the field was already checked (e.g., on form errors)
+    toggleOtherField();
+  });
+</script>
+{% endblock %}
+

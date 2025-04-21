@@ -1,0 +1,287 @@
+from django import forms
+from django.contrib.auth.forms import UserCreationForm
+from .models import User, ServiceRequest, Car
+from .validators import validate_license_plate_format
+import datetime
+from django.contrib.auth import get_user_model
+
+# --------------------------
+# Bootstrap Mixin
+# --------------------------
+
+class BootstrapFormMixin:
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for _, field in self.fields.items():
+            field.widget.attrs.update({
+                'class': 'form-control',
+                'style': 'max-width: 50%; display: inline-block;',
+            })
+
+
+# --------------------------
+# Custom Signup Form
+# --------------------------
+class CustomSignupForm(BootstrapFormMixin, UserCreationForm):
+    first_name = forms.CharField(
+        required=True,
+        error_messages={'required': 'First name is required. Please fill out this field.'}
+    )
+    last_name = forms.CharField(
+        required=True,
+        error_messages={'required': 'Last name is required. Please fill out this field.'}
+    )
+    email = forms.EmailField(
+        required=True,
+        error_messages={'required': 'Email is required. Please fill out this field.'}
+    )
+    license_plate = forms.CharField(
+        max_length=20,
+        help_text="Enter your license plate (this will be your username)",
+        validators=[validate_license_plate_format],
+        required=True,
+        error_messages={'required': 'License plate is required. Please fill out this field.'}
+    )
+
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email', 'password1', 'password2', 'license_plate']
+
+    def clean_license_plate(self):
+        license_plate = self.cleaned_data.get('license_plate').upper()
+        if User.objects.filter(username=license_plate).exists():
+            raise forms.ValidationError("That license plate is already registered.")
+        return license_plate
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        license_plate = self.cleaned_data['license_plate'].upper()
+        user.username = license_plate
+        user.role = 'customer'
+        if commit:
+            user.save()
+            # Create a car with blank model and year
+            Car.objects.create(owner=user, license_plate=license_plate, model='', year=None)
+        return user
+
+# --------------------------
+# Service Request Form
+# --------------------------
+JOB_TYPE_CHOICES = [
+    ('Car Wash', 'Car Wash'),
+    ('Oil Change', 'Oil Change'),
+    ('Engine Light', 'Engine Light'),
+    ('Brake Pad Replacement', 'Brake Pad Replacement'),
+    ('Battery Replacement', 'Battery Replacement'),
+    ('Other', 'Other'),
+]
+
+class ServiceRequestForm(BootstrapFormMixin, forms.Form):
+    model = forms.CharField(
+        max_length=100,
+        required=True,
+        error_messages={'required': 'Car model is required.'}
+    )
+    year = forms.ChoiceField(
+        choices=[(y, y) for y in range(1990, datetime.datetime.now().year + 1)],
+        required=True,
+        error_messages={'required': 'Car year is required.'}
+    )
+    pickup_location = forms.CharField(
+        max_length=255,
+        required=True,
+        error_messages={'required': 'Pickup location is required.'}
+    )
+    dropoff_location = forms.CharField(
+        max_length=255,
+        required=True,
+        error_messages={'required': 'Dropoff location is required.'}
+    )
+    job_type = forms.ChoiceField(
+        choices=JOB_TYPE_CHOICES,
+        required=True,
+        label="Job Type",
+        error_messages={'required': 'Please select a job type.'}
+    )
+    description = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 3, "placeholder": "Please describe the issue"}),
+        label="Description (if Other)"
+    )
+
+    def __init__(self, *args, **kwargs):
+        # We pop the user if passed; we don't need it here.
+        kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if self.errors:
+            # Add a non-field error to display a banner if any field errors exist.
+            raise forms.ValidationError("Please fill out all required fields.")
+        return cleaned_data
+
+# --------------------------
+# Edit Request Form
+# --------------------------
+
+class EditRequestForm(BootstrapFormMixin, forms.ModelForm):
+    class Meta:
+        model = ServiceRequest
+        fields = ['description', 'pickup_location', 'dropoff_location', 'status', 'assigned_to']
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+
+        if user and user.role == 'customer':
+            self.fields['status'].disabled = True
+            self.fields['assigned_to'].disabled = True
+        elif user and user.role == 'concierge':
+            self.fields['assigned_to'].queryset = User.objects.filter(role='concierge')
+        elif user and user.role == 'dealer':
+            self.fields['assigned_to'].queryset = User.objects.filter(role='dealer')
+        else:
+            self.fields['assigned_to'].queryset = User.objects.none()
+
+        self.fields['assigned_to'].required = False
+
+        # Apply width styling
+        for field in self.fields.values():
+            existing_class = field.widget.attrs.get('class', '')
+            field.widget.attrs.update({
+                'class': f'{existing_class} form-control',
+                'style': 'max-width: 50%; display: inline-block;',
+            })
+
+
+# --------------------------
+# Car Forms
+# --------------------------
+class CarForm(forms.ModelForm):
+    year = forms.ChoiceField(
+        choices=[(y, y) for y in range(1990, 2026)],
+        required=True,
+        label="Year"
+    )
+
+    class Meta:
+        model = Car
+        fields = ['model', 'year', 'license_plate']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.license_plate:
+            self.initial['license_plate'] = self.instance.license_plate.upper()
+
+# --------------------------
+# Add Car Form
+# --------------------------
+class AddCarForm(forms.ModelForm):
+    year = forms.ChoiceField(
+        choices=[(y, y) for y in range(1990, 2026)],
+        required=True,
+        label="Year"
+    )
+
+    class Meta:
+        model = Car
+        fields = ['model', 'year', 'license_plate']
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+
+    def clean_license_plate(self):
+        plate = self.cleaned_data['license_plate'].upper()
+        if Car.objects.filter(license_plate__iexact=plate, owner=self.user).exists():
+            raise forms.ValidationError("This license plate is already registered to your account.")
+        return plate
+
+    def save(self, commit=True):
+        car = super().save(commit=False)
+        car.owner = self.user
+        car.license_plate = car.license_plate.upper()
+        if commit:
+            car.save()
+        return car
+
+# --------------------------
+# Account Update Form
+# --------------------------
+
+# --------------------------
+# Account Update Form
+# --------------------------
+class AccountUpdateForm(BootstrapFormMixin, forms.ModelForm):
+    first_name = forms.CharField(
+        required=True,
+        error_messages={'required': 'First name is required.'}
+    )
+    last_name = forms.CharField(
+        required=True,
+        error_messages={'required': 'Last name is required.'}
+    )
+    address = forms.CharField(
+        required=True,
+        error_messages={'required': 'Address is required.'},
+        widget=forms.TextInput(attrs={'placeholder': 'Enter your full address'})
+    )
+    email = forms.EmailField(
+        required=True,
+        error_messages={'required': 'Email is required.'}
+    )
+    phone = forms.CharField(
+        required=True,
+        error_messages={'required': 'Phone number is required.'},
+        widget=forms.TextInput(attrs={'placeholder': 'Enter your phone number'})
+    )
+
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'address', 'email', 'phone']
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if any(field in self.errors for field in ['first_name', 'last_name', 'address', 'email', 'phone']):
+            raise forms.ValidationError("Please fill out all required fields.")
+        return cleaned_data
+    
+    #-------------------------------
+    # Automatically style forms to not be huge
+    #------------------------------
+
+User = get_user_model()
+
+class AccountUpdateForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email', 'phone', 'address']  # adjust as needed
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs.update({
+                'class': 'form-control',
+                'style': 'max-width: 50%; display: inline-block;',
+            })
+
+#----------------
+# Create custom admin form in admin.py
+# --------------
+
+User = get_user_model()
+
+class CustomUserAdminForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['role'].required = False
+        self.fields['email'].required = True
+        self.fields['first_name'].required = True
+        self.fields['last_name'].required = True
+        self.fields['phone'].required = False
+        self.fields['role'].initial = None  # 👈 This makes it show as --

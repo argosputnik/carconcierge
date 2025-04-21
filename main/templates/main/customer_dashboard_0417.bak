@@ -1,0 +1,104 @@
+{% extends 'main/base.html' %}
+
+{% block title %}Customer Dashboard{% endblock %}
+{% block main_class %}with-padding{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h2 class="text-center">Welcome, {{ user.first_name }}!</h2>
+  <div class="d-flex justify-content-center gap-3 mb-3">
+    {% include 'main/_dashboard_buttons.html' %}
+  </div>
+
+  <p>You have {{ open_request_count }} service request{{ open_request_count|pluralize }} matching your filter.</p>
+
+  <!-- Filter dropdown form -->
+  <form method="get" class="mb-3">
+    <label for="status" class="form-label">Filter by Status:</label>
+    <select name="status" id="status" class="form-select w-auto d-inline-block" onchange="this.form.submit()">
+      <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
+      <option value="Pending" {% if status_filter == 'Pending' %}selected{% endif %}>Pending</option>
+      <option value="In service" {% if status_filter == 'In service' %}selected{% endif %}>In service</option>
+      <option value="Delivery" {% if status_filter == 'Delivery' %}selected{% endif %}>Delivery</option>
+      <option value="Complete" {% if status_filter == 'Complete' %}selected{% endif %}>Complete</option>
+    </select>
+  </form>
+
+  <!-- Activity Table -->
+  {% if open_requests %}
+  <table class="table table-striped mt-4">
+    <thead>
+      <tr>
+        <th>Request Date</th>
+        <th>Pickup</th>
+        <th>Dropoff</th>
+        <th>Status</th>
+        <th>Assigned To</th>
+        <th class="text-end">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for request in open_requests %}
+        <tr>
+          <td>{{ request.requested_at|date:"Y-m-d H:i" }}</td>
+          <td>{{ request.pickup_location }}</td>
+          <td>{{ request.dropoff_location }}</td>
+          <td>{{ request.status }}</td>
+          <td>{{ request.assigned_to.get_full_name|default:"-" }}</td>
+          <td class="text-end">
+            <a href="{% url 'edit_service_request' request.id %}" class="btn btn-primary btn-sm">Edit</a>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p>There are 0 service requests with this status.</p>
+  {% endif %}
+
+  <!-- Invoice Table -->
+     <!-- Invoice Table -->
+  <h3 class="mt-5">Invoices</h3>
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Invoice Date</th>
+        <th>Last Updated</th>
+        <th>Name</th>
+        <th>Price</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for invoice in invoices %}
+        <tr>
+          <td>{{ invoice.invoice_date|date:"Y‑m‑d H:i" }}</td>
+          <td>{{ invoice.updated_at|date:"Y‑m‑d H:i" }}</td>
+          <td>{{ invoice.first_name }} {{ invoice.last_name }}</td>
+          <td>
+            {{ invoice.price|floatformat:2 }} {{ invoice.currency }}
+          </td>
+          <td>{{ invoice.payment_status }}</td>
+          <td>
+            <a href="{% url 'view_invoice' 1 invoice.id %}" class="btn btn-info btn-sm">View</a>
+            <button type="button" class="btn btn-warning btn-sm" disabled>Pay</button>
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="6">No invoices found.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  
+</div>
+
+ 
+
+{% endblock %}
+
+
+

@@ -1,0 +1,45 @@
+from django.contrib.auth.models import AbstractUser
+from django.db import models
+
+# Roles
+ROLE_CHOICES = (
+    ('customer', 'Customer'),
+    ('concierge', 'Concierge'),
+    ('dealer', 'Dealer'),
+    ('owner', 'Owner'),
+)
+
+class User(AbstractUser):
+    role = models.CharField(max_length=20, choices=[
+        ('customer', 'Customer'),
+        ('concierge', 'Concierge'),
+        ('dealer', 'Dealer'),
+        ('owner', 'Owner'),
+    ])
+
+class Car(models.Model):
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cars')
+    model = models.CharField(max_length=100)
+    year = models.IntegerField()
+    license_plate = models.CharField(max_length=20)
+
+class ServiceRequest(models.Model):
+    car = models.ForeignKey(Car, on_delete=models.CASCADE)
+    requested_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    pickup_address = models.CharField(max_length=255)
+    dropoff_address = models.CharField(max_length=255)
+    status = models.CharField(max_length=50, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+class RepairNote(models.Model):
+    service_request = models.ForeignKey(ServiceRequest, on_delete=models.CASCADE, related_name='notes')
+    mechanic = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, limit_choices_to={'role': 'dealer'})
+    note = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+class NotificationLog(models.Model):
+    recipient = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    channel = models.CharField(max_length=20)  # e.g., SMS, email, in-app
+    message = models.TextField()
+    sent_at = models.DateTimeField(auto_now_add=True)
+

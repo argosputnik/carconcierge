@@ -1,0 +1,275 @@
+/* -------------------- Reset -------------------- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* -------------------- Layout -------------------- */
+html, body {
+  height: 100%;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+}
+
+.page-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+main {
+  flex: 1;
+  padding-top: 100px;
+  text-align: center;
+}
+
+/* -------------------- Header & Navigation -------------------- */
+header {
+  background: rgba(0, 0, 0, 0.8);
+  position: fixed;
+  width: 100%;
+  top: 0;
+  z-index: 1000;
+}
+
+h2 {
+  padding-bottom: 1em;
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+}
+
+/* Hamburger Button */
+.nav-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  z-index: 1002;
+  position: absolute;
+  right: 20px;
+  top: 10px;
+}
+
+.hamburger-bar {
+  width: 25px;
+  height: 3px;
+  background-color: #fff;
+  margin: 4px 0;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.nav-toggle.active .hamburger-bar:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+.nav-toggle.active .hamburger-bar:nth-child(2) {
+  opacity: 0;
+}
+.nav-toggle.active .hamburger-bar:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+/* Desktop Navigation */
+.nav-list {
+  list-style: none;
+  display: flex;
+  gap: 20px;
+}
+
+.nav-list li {
+  position: relative;
+}
+
+.nav-list a,
+.nav-list .dropbtn {
+  color: #fff;
+  text-decoration: none;
+  font-size: 16px;
+  padding: 15px 0;
+  display: block;
+  transition: color 0.3s ease;
+}
+
+.nav-list a:hover,
+.nav-list .dropbtn:hover {
+  color: #e94e77;
+}
+
+/* Dropdown Menu */
+.dropdown-content {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: #333;
+  min-width: 160px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1001;
+}
+
+.dropdown-content a,
+.dropdown-content .logout-link {
+  color: #fff;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+  font-size: 16px;
+}
+
+.dropdown-content a:hover,
+.dropdown-content .logout-link:hover {
+  background: #444;
+}
+
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
+/* -------------------- Submenu Dropdown Support -------------------- */
+.dropdown-submenu {
+  position: relative;
+}
+
+.dropdown-submenu .dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 100%;
+  background-color: #333;  /* Match main dropdown */
+  border: none;
+  min-width: 160px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.dropdown-submenu:hover .dropdown-menu {
+  display: block;
+}
+
+/* Submenu Items */
+.dropdown-submenu .dropdown-item {
+  color: #fff !important;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+  font-size: 16px;
+  background-color: #333; /* solid background for submenu items */
+}
+
+.dropdown-submenu .dropdown-item:hover {
+  color: #fff !important;
+  background-color: #444; /* hover effect */
+}
+
+/* -------------------- Responsive Navigation -------------------- */
+@media (max-width: 768px) {
+  .nav-toggle {
+    display: flex;
+  }
+
+  .nav-list {
+    flex-direction: column;
+    position: fixed;
+    top: 60px;
+    left: 0;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    padding: 20px;
+    display: none;
+    z-index: 1001;
+  }
+
+  .nav-list.active {
+    display: flex;
+  }
+
+  .nav-list li {
+    margin-bottom: 10px;
+  }
+
+  .dropdown-submenu .dropdown-menu {
+    left: 100%;
+    top: 0;
+    margin-top: 0;
+  }
+}
+
+/* -------------------- Footer -------------------- */
+footer {
+  background: #333;
+  color: #fff;
+  text-align: center;
+  padding: 20px;
+  margin-top: auto;
+}
+
+/* -------------------- Form Styling -------------------- */
+input.form-control,
+textarea.form-control,
+select.form-control {
+  background-color: #ffffff !important;
+  color: #212529 !important;
+  border: 1px solid #000 !important;
+  border-radius: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 1rem;
+  box-shadow: none !important;
+}
+
+input.form-control:focus,
+textarea.form-control:focus,
+select.form-control:focus {
+  border-color: #86b7fe !important;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25) !important;
+  outline: none !important;
+}
+
+/* -------------------- Hero Section -------------------- */
+.hero-content {
+  padding-top: 100px;
+}
+
+
+.dashboard-btn-group,
+.dashboard-btn {
+  min-width: 110px;
+  max-width: 100%;
+  flex: 1 1 auto;
+  text-align: center;
+}
+
+
+/* Force the container to always use a single flex row */
+.dashboard-buttons-fixed {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;  /* No wrapping */
+  justify-content: space-between !important;
+  align-items: center !important;
+  overflow-x: auto !important;   /* Allow horizontal scroll if needed */
+  width: 100% !important;
+  padding: 0 10px !important;
+  box-sizing: border-box;
+}
+
+/* Force each direct child (buttons and button groups) to share equal, shrinkable space */
+.dashboard-buttons-fixed > * {
+  flex: 1 1 33% !important;   /* Each takes about one-third of available width */
+  min-width: 0 !important;     /* Let them shrink arbitrarily */
+  white-space: nowrap !important;  /* Prevent text wrap */
+  text-align: center !important;
+}
+
+/* For very narrow screens, reduce padding and font size if needed */
+@media (max-width: 480px) {
+  .dashboard-buttons-fixed > * {
+    font-size: 10px !important;
+    padding: 4px 6px !important;
+  }
+}
+

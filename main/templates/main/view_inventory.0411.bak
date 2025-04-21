@@ -1,0 +1,39 @@
+{% extends 'main/base.html' %}
+{% block title %}Inventory{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">Inventory List</h2>
+
+  <div class="d-flex justify-content-center gap-3 mb-4">
+    {% include 'main/_dashboard_buttons.html' %}
+  </div>
+
+  {% if inventory %}
+    <table class="table table-bordered table-hover">
+      <thead class="table-dark">
+        <tr>
+          <th>Item Number</th>
+          <th>Name</th>
+          <th>Quantity</th>
+          <th>Price</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in inventory %}
+          <tr>
+            <td>{{ item.item_number }}</td>
+            <td>{{ item.item_name }}</td>
+            <td>{{ item.item_quantity }}</td>
+            <td>{{ item.item_price }} ₾</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No inventory items found.</p>
+  {% endif %}
+</div>
+{% endblock %}
+
+

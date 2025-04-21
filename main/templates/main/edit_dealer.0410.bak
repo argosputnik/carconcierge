@@ -1,0 +1,39 @@
+{% extends 'main/base.html' %}
+{% block title %}Edit Dealer{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>Edit Dealer: {{ form.instance.name }}</h2>
+
+  <div class="d-flex justify-content-center gap-3 mb-3">
+    {% include 'main/_dashboard_buttons.html' %}
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+
+    {{ form.non_field_errors }}
+
+    <div class="mb-3">
+      {{ form.name.label_tag }} {{ form.name }}
+    </div>
+    <div class="mb-3">
+      {{ form.phone.label_tag }} {{ form.phone }}
+    </div>
+    <div class="mb-3">
+      {{ form.address.label_tag }} {{ form.address }}
+    </div>
+    <div class="mb-3">
+      {{ form.car_specialty.label_tag }} {{ form.car_specialty }}
+    </div>
+    <div class="mb-3">
+      {{ form.job_specialty.label_tag }}
+      {{ form.job_specialty }}
+    </div>
+
+    <button type="submit" class="btn btn-success">Save Changes</button>
+    <a href="{% url 'view_dealers' %}" class="btn btn-secondary">Cancel</a>
+  </form>
+</div>
+{% endblock %}
+

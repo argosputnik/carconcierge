@@ -1,0 +1,27 @@
+<div class="d-flex gap-3 mb-3">
+  {% if user.role == 'customer' %}
+    <a href="{% url 'create_service_request' %}" class="btn btn-dark">Request Service</a>
+    
+    <!-- My Cars Dropdown -->
+    <div class="dropdown">
+      <button class="btn btn-dark dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        My Cars
+      </button>
+      <ul class="dropdown-menu">
+        <li><a class="dropdown-item" href="{% url 'my_cars' %}">View</a></li>
+        <li><a class="dropdown-item" href="{% url 'add_car' %}">Add</a></li>
+      </ul>
+    </div>
+  {% endif %}
+
+  <!-- Back to Dashboard -->
+  {% if user.role == 'customer' %}
+    <a href="{% url 'customer_dashboard' %}" class="btn btn-dark">Back to Dashboard</a>
+  {% elif user.role == 'concierge' %}
+    <a href="{% url 'concierge_dashboard' %}" class="btn btn-dark">Back to Dashboard</a>
+  {% elif user.role == 'dealer' %}
+    <a href="{% url 'dealer_dashboard' %}" class="btn btn-dark">Back to Dashboard</a>
+  {% elif user.role == 'owner' %}
+    <a href="{% url 'owner_dashboard' %}" class="btn btn-dark">Back to Dashboard</a>
+  {% endif %}
+</div>

@@ -1,0 +1,45 @@
+i{% extends 'main/base.html' %}
+{% block title %}Dealers{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="text-center">Registered Dealers</h2>
+
+  <div class="d-flex justify-content-center gap-3 mb-3">
+    {% include 'main/_dashboard_buttons.html' %}
+  </div>
+
+  <table class="table table-striped mt-3">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Phone</th>
+        <th>Address</th>
+        <th>Car Specialty</th>
+        <th>Job Specialties</th>
+        <th>Actions</th> <!-- Added a proper header for buttons -->
+      </tr>
+    </thead>
+    <tbody>
+      {% for dealer in dealers %}
+      <tr>
+        <td>{{ dealer.name }}</td>
+        <td>{{ dealer.phone }}</td>
+        <td>{{ dealer.address }}</td>
+        <td>{{ dealer.car_specialty }}</td>
+        <td>{{ dealer.job_specialty|join:", " }}</td>
+        <td>
+          <a href="{% url 'edit_dealer' dealer.id %}" class="btn btn-sm btn-primary">Edit</a>
+          <a href="{% url 'delete_dealer' dealer.id %}" class="btn btn-sm btn-danger">Delete</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="6" class="text-center">No dealers found.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+

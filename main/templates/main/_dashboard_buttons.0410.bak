@@ -1,0 +1,53 @@
+<div class="container mt-4 text-center">
+  <div class="d-inline-block">
+    <div class="btn-group">
+      <button class="btn btn-dark dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+        Users
+      </button>
+      <ul class="dropdown-menu" aria-labelledby="userDropdown">
+
+        <!--   Concierge Submenu-->
+        <li class="dropdown-submenu dropend">
+          <a class="dropdown-item dropdown-toggle" href="#">Concierge</a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{% url 'add_concierge' %}">Add</a></li>
+            <li><a class="dropdown-item" href="{% url 'view_concierges' %}">View</a></li>
+          </ul>
+        </li>   
+
+        <!-- Dealer Submenu-- -->
+        <li class="dropdown-submenu dropend">
+          <a class="dropdown-item dropdown-toggle" href="#">Dealer</a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{% url 'view_dealers' %}">View</a></li>
+            <li><a class="dropdown-item" href="{% url 'add_dealer' %}">Add</a></li>
+          </ul>
+        </li>
+
+        <!-- Owner Submenu -->
+        <li class="dropdown-submenu dropend">
+          <a class="dropdown-item dropdown-toggle" href="#">Owner</a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{% url 'add_owner' %}">Add</a></li>
+            <li><a class="dropdown-item" href="{% url 'view_owners' %}">View</a></li>
+          </ul>
+        </li>
+
+      </ul>
+    </div>
+
+      <!-- Inventory Dropdown -->
+      <div class="btn-group me-2">
+        <button class="btn btn-dark dropdown-toggle" type="button" id="inventoryDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+          Inventory
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="inventoryDropdown">
+          <li><a class="dropdown-item" href="{% url 'view_inventory' %}">View</a></li>
+        </ul>
+      </div>
+
+
+    <a href="{% url 'owner_dashboard' %}" class="btn btn-secondary ms-2">Back to Dashboard</a>
+  </div>
+</div>
+

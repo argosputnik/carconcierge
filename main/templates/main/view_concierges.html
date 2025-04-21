@@ -1,0 +1,44 @@
+{% extends 'main/base.html' %}
+{% block title %}Concierges{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="text-center">Registered Concierges</h2>
+
+  <div class="d-flex justify-content-center gap-3 mb-3">
+    {% include 'main/_dashboard_buttons.html' %}
+  </div>
+
+  <table class="table table-striped mt-3">
+    <thead>
+      <tr>
+        <th>Username</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Phone</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for concierge in concierges %}
+      <tr>
+        <td>{{ concierge.username }}</td>
+        <td>{{ concierge.first_name }} {{ concierge.last_name }}</td>
+        <td>{{ concierge.email }}</td>
+        <td>{{ concierge.address }}</td>
+        <td>{{ concierge.phone }}</td>
+        <td>
+          <a href="{% url 'edit_concierge' concierge.id %}" class="btn btn-sm btn-primary">Edit</a>
+          <a href="{% url 'delete_concierge' concierge.id %}" class="btn btn-sm btn-danger">Delete</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5" class="text-center">No concierges found.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+

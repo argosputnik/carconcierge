@@ -1,0 +1,25 @@
+{% extends 'main/base.html' %}
+{% block main_class %}no-padding{% endblock %}
+
+{% block title %}Home - Cars.ge{% endblock %}
+
+{% block content %}
+  <section class="hero" style="min-height: calc(100vh - 160px);">
+    <div class="hero-content">
+      <h1>Welcome to Car Concierge</h1>
+      <h2>We pick up your car. We fix your car. We return your car to you.</h2>
+      <h3>Hassle free, honest car repair service</h3></div></br></br>
+      
+      {% if user.is_authenticated %}
+  <a href="{% url 'redirect_after_login' %}" class="btn btn-dark">My Dashboard</a>
+{% else %}
+  <a href="{% url 'login' %}" class="btn btn-dark">Login/Register</a>
+{% endif %}
+
+
+    </div>
+  </section>
+
+  
+{% endblock %}
+

@@ -1,0 +1,59 @@
+{% extends 'main/base.html' %}
+{% block title %}Add Dealer{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <h2 class="mb-4">Add New Dealer</h2>
+
+  <div class="d-flex justify-content-center gap-3 mb-4">
+    {% include 'main/_dashboard_buttons.html' %}
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="mb-3">{{ form.username.label_tag }} {{ form.username }}</div>
+    <div class="mb-3">{{ form.first_name.label_tag }} {{ form.first_name }}</div>
+    <div class="mb-3">{{ form.last_name.label_tag }} {{ form.last_name }}</div>
+    <div class="mb-3">{{ form.email.label_tag }} {{ form.email }}</div>
+    <div class="mb-3">{{ form.phone.label_tag }} {{ form.phone }}</div>
+    <div class="mb-3">{{ form.address.label_tag }} {{ form.address }}</div>
+  
+    <div class="mb-3">
+      <label>Job Specialty</label>
+      {{ form.job_specialty }}
+    </div>
+  
+    <div id="other-specialty-container" class="mb-3" style="display: none;">
+      {{ form.job_specialty_other.label_tag }}
+      {{ form.job_specialty_other }}
+    </div>
+    
+  
+    <div class="mb-3">{{ form.password1.label_tag }} {{ form.password1 }}</div>
+    <div class="mb-3">{{ form.password2.label_tag }} {{ form.password2 }}</div>
+  
+    <button type="submit" class="btn btn-primary">Add Dealer</button>
+  </form>
+  
+
+
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const checkboxes = document.querySelectorAll('input[name="job_specialty"]');
+    const otherInput = document.getElementById('id_job_specialty_other');
+    const otherContainer = document.getElementById('other-specialty-container');
+
+    function toggleOtherField() {
+      const isChecked = Array.from(checkboxes).some(cb => cb.value === 'Other' && cb.checked);
+      otherContainer.style.display = isChecked ? 'block' : 'none';
+      if (!isChecked) otherInput.value = '';
+    }
+
+    checkboxes.forEach(cb => cb.addEventListener('change', toggleOtherField));
+    toggleOtherField(); // initialize visibility on page load
+  });
+</script>
+{% endblock %}
+

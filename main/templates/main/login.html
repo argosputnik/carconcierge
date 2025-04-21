@@ -1,0 +1,37 @@
+{% extends 'main/base.html' %}
+
+{% block title %}Login{% endblock %}
+
+{% block main_class %}with-padding{% endblock %}
+
+{% block content %}
+  <div class="container" style="max-width: 500px; margin-top: 20px;">
+    <h2>Login</h2>
+
+    {% if form.errors %}
+      <div style="color: red; margin-bottom: 20px;">
+        <ul>
+          {% for field in form %}
+            {% for error in field.errors %}
+              <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+            {% endfor %}
+          {% endfor %}
+          {% for error in form.non_field_errors %}
+            <li>{{ error }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit" class="btn btn-dark">Login</button>
+    </form>
+
+    <p style="margin-top: 10px;">
+      <a href="{% url 'password_reset' %}">Forgot your password?</a>
+    </p>
+  </div>
+{% endblock %}
+

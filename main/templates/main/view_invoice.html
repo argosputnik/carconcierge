@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Invoice #{{ invoice.id }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .invoice-header, .invoice-footer { text-align: center; }
+        .invoice-details { margin-top: 20px; }
+        .customer-info { margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        table, th, td { border: 1px solid #ccc; }
+        th, td { padding: 8px; text-align: left; }
+        .totals { float: right; width: 40%; }
+        .totals table { border: none; }
+        .totals td { border: none; padding: 5px 0; }
+        @media print {
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-header">
+        <h1>Invoice</h1>
+        <p>Invoice ID: {{ invoice.id }}</p>
+        <p>Date: {{ invoice.invoice_date|date:"Y-m-d H:i" }}</p>
+        <button type="button" class="btn btn-primary no-print" onclick="window.print()">Print Invoice</button>
+    </div>
+    
+    <div class="invoice-details">
+        <div class="customer-info">
+            <h2>Bill To:</h2>
+            <p>{{ invoice.first_name }} {{ invoice.last_name }}</p>
+            <p>{{ invoice.address }}</p>
+            <p>{{ invoice.phone }}</p>
+            <p>{{ invoice.email }}</p>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th>Price</th>
+                    <th>Currency</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        {% if invoice.service_request %}
+                            {{ invoice.service_request.description }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td>{{ invoice.price }}</td>
+                    <td>{{ invoice.currency }}</td>
+                    <td>{{ invoice.payment_status }}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        {% if invoice.dealer_name %}
+        <div class="customer-info">
+            <h2>Dealer Info:</h2>
+            <p>{{ invoice.dealer_name }}</p>
+            {% if invoice.dealer_address %}<p>{{ invoice.dealer_address }}</p>{% endif %}
+            {% if invoice.dealer_phone %}<p>{{ invoice.dealer_phone }}</p>{% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="invoice-footer">
+        <p>Thank you for your business!</p>
+    </div>
+</body>
+</html>
+

@@ -1,0 +1,241 @@
+from django import forms
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth import get_user_model
+#Put user back in .models if it does not work
+from .models import ServiceRequest, Car, JOB_TYPE_CHOICES
+from .validators import validate_license_plate_format
+import datetime
+
+
+User = get_user_model()
+
+# --------------------------
+# Bootstrap Mixin
+# --------------------------
+class BootstrapFormMixin:
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for _, field in self.fields.items():
+            field.widget.attrs.update({
+                'class': 'form-control',
+                'style': 'max-width: 50%; display: inline-block;',
+            })
+
+# --------------------------
+# Custom Signup Form
+# --------------------------
+class CustomSignupForm(BootstrapFormMixin, UserCreationForm):
+    first_name = forms.CharField(required=True)
+    last_name = forms.CharField(required=True)
+    email = forms.EmailField(required=True)
+    license_plate = forms.CharField(
+        max_length=20,
+        help_text="Enter your license plate (this will be your username)",
+        validators=[validate_license_plate_format],
+        required=True
+    )
+
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email', 'password1', 'password2', 'license_plate']
+
+    def clean_license_plate(self):
+        license_plate = self.cleaned_data.get('license_plate').upper()
+        if User.objects.filter(username=license_plate).exists():
+            raise forms.ValidationError("That license plate is already registered.")
+        return license_plate
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        license_plate = self.cleaned_data['license_plate'].upper()
+        user.username = license_plate
+        user.role = 'customer'
+        if commit:
+            user.save()
+            Car.objects.create(owner=user, license_plate=license_plate, model='', year=None)
+        return user
+
+
+# --------------------------
+# Service Request Form
+# --------------------------
+
+#Defined in models.py
+#JOB_TYPE_CHOICES = [
+#    ('Car Wash', 'Car Wash'),
+#    ('Oil Change', 'Oil Change'),
+#    ('Engine Light', 'Engine Light'),
+#    ('Brake Pad Replacement', 'Brake Pad Replacement'),
+#    ('Battery Replacement', 'Battery Replacement'),
+#    ('Other', 'Other'),
+#]
+
+class ServiceRequestForm(BootstrapFormMixin, forms.Form):
+    model = forms.CharField(max_length=100, required=True)
+    year = forms.ChoiceField(choices=[(y, y) for y in range(1990, datetime.datetime.now().year + 1)], required=True)
+    pickup_location = forms.CharField(max_length=255, required=True)
+    dropoff_location = forms.CharField(max_length=255, required=True)
+    job_type = forms.ChoiceField(choices=JOB_TYPE_CHOICES, required=True)
+    description = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 3}))
+
+    def __init__(self, *args, **kwargs):
+        kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+
+# --------------------------
+# Edit Request Form
+# --------------------------
+class EditRequestForm(BootstrapFormMixin, forms.ModelForm):
+    class Meta:
+        model = ServiceRequest
+        fields = ['description', 'pickup_location', 'dropoff_location', 'status', 'assigned_to']
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+
+        if user:
+            if user.role == 'customer':
+                self.fields['status'].disabled = True
+                self.fields['assigned_to'].disabled = True
+            elif user.role == 'concierge':
+                self.fields['assigned_to'].queryset = User.objects.filter(role='concierge')
+            elif user.role == 'dealer':
+                self.fields['assigned_to'].queryset = User.objects.filter(role='dealer')
+            else:
+                self.fields['assigned_to'].queryset = User.objects.none()
+
+        self.fields['assigned_to'].required = False
+
+# --------------------------
+# Car Forms
+# --------------------------
+class CarForm(forms.ModelForm):
+    year = forms.ChoiceField(choices=[(y, y) for y in range(1990, 2026)], required=True)
+
+    class Meta:
+        model = Car
+        fields = ['model', 'year', 'license_plate']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.license_plate:
+            self.initial['license_plate'] = self.instance.license_plate.upper()
+
+class AddCarForm(forms.ModelForm):
+    year = forms.ChoiceField(choices=[(y, y) for y in range(1990, 2026)], required=True)
+
+    class Meta:
+        model = Car
+        fields = ['model', 'year', 'license_plate']
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+
+    def clean_license_plate(self):
+        plate = self.cleaned_data['license_plate'].upper()
+        if Car.objects.filter(license_plate__iexact=plate, owner=self.user).exists():
+            raise forms.ValidationError("This license plate is already registered to your account.")
+        return plate
+
+    def save(self, commit=True):
+        car = super().save(commit=False)
+        car.owner = self.user
+        car.license_plate = car.license_plate.upper()
+        if commit:
+            car.save()
+        return car
+
+# --------------------------
+# Account Update Form
+# --------------------------
+
+class AccountUpdateForm(BootstrapFormMixin, forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email', 'address', 'phone']
+
+
+# --------------------------
+# Add Owner Form
+# --------------------------
+
+class AddOwnerForm(UserCreationForm):
+    email = forms.EmailField(required=True)
+    first_name = forms.CharField(required=True)
+    last_name = forms.CharField(required=True)
+
+    class Meta:
+        model = User
+        fields = [
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'password1',
+            'password2',
+        ]
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.role = 'owner'
+        if commit:
+            user.save()
+        return user
+
+
+class AddDealerForm(UserCreationForm):
+    car_specialty = forms.CharField(required=False, label="Car Specialty")
+    # Assuming job_specialty is rendered as checkboxes (MultiSelect)
+    job_specialty = forms.MultipleChoiceField(
+        choices=JOB_TYPE_CHOICES,
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+        label="Job Specialty"
+    )
+    # Field for "Other" specialty text input
+    job_specialty_other = forms.CharField(required=False, label="Other Specialty (please specify)")
+
+    class Meta:
+        model = User  # or your custom user/dealer creation mix if applicable
+        fields = ['username', 'first_name', 'last_name', 'email', 'phone', 'address', 
+                  'car_specialty', 'job_specialty', 'job_specialty_other', 'password1', 'password2']
+
+    def __init__(self, *args, **kwargs):
+        super(AddDealerForm, self).__init__(*args, **kwargs)
+        for field in self.fields.values():
+            if not isinstance(field.widget, forms.CheckboxSelectMultiple):
+                field.widget.attrs.update({
+                    'class': 'form-control',
+                    'style': 'max-width: 50%; display: inline-block;',
+                })
+
+
+class AddConciergeForm(UserCreationForm):
+    email = forms.EmailField(required=True)
+    first_name = forms.CharField(required=True)
+    last_name = forms.CharField(required=True)
+    phone = forms.CharField(required=False)
+    address = forms.CharField(required=False)
+
+    class Meta:
+        model = User
+        fields = [
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'phone',
+            'address',
+            'password1',
+            'password2'
+        ]
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        # You’ll override role in the view, but if you want to set it here:
+        # user.role = 'concierge'
+        if commit:
+            user.save()
+        return user

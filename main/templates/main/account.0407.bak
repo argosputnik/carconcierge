@@ -1,0 +1,30 @@
+{% extends 'main/base.html' %}
+{% block title %}Account Info{% endblock %}
+{% block main_class %}with-padding{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 600px;">
+  <h2>Account Info</h2>
+
+  {% include 'main/_dashboard_buttons.html' %}
+
+  <form method="post">
+    {% csrf_token %}
+
+    {% for field in form %}
+  <div class="mb-3 d-flex align-items-center">
+    <label for="{{ field.id_for_label }}" class="me-2" style="width: 150px;">{{ field.label }}</label>
+    {{ field }}
+  </div>
+  {% if field.errors %}
+    <div class="text-danger mb-2">{{ field.errors }}</div>
+  {% endif %}
+{% endfor %}
+
+
+
+    <button type="submit" class="btn btn-dark">Update</button>
+  </form>
+</div>
+{% endblock %}
+

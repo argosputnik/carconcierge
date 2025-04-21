@@ -1,0 +1,133 @@
+{% extends 'main/base.html' %}
+{% load static helpers %}
+
+{% block title %}Edit Service Request{% endblock %}
+{% block main_class %}with-padding{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h2>Edit Service Request</h2>
+  <form method="post">
+    {% csrf_token %}
+    {% for field in form %}
+      {# Pickup & dropoff: editable only for owner/customer #}
+      {% if field.name == 'pickup_location' or field.name == 'dropoff_location' %}
+        {% if can_edit_locations %}
+          <div class="mb-3 d-flex align-items-center">
+            <label for="{{ field.id_for_label }}" class="me-3" style="width:180px;">
+              {{ field.label }}
+            </label>
+            {{ field }}
+          </div>
+        {% else %}
+          <div class="mb-3 d-flex align-items-center">
+            <label class="me-3" style="width:180px;">
+              {{ field.label }}
+            </label>
+            <input type="text"
+                   readonly
+                   class="form-control"
+                   value="{{ service_request|get_field:field.name }}" />
+          </div>
+        {% endif %}
+      {% else %}
+        <div class="mb-3 d-flex align-items-center">
+          <label for="{{ field.id_for_label }}" class="me-3" style="width:180px;">
+            {{ field.label }}
+          </label>
+          {{ field }}
+        </div>
+      {% endif %}
+      {% if field.errors %}
+        <div class="text-danger mb-2 ms-3">{{ field.errors }}</div>
+      {% endif %}
+    {% endfor %}
+
+    {# Map container always visible #}
+    <div id="map"
+         data-can-edit="{{ can_edit_locations|yesno:'true,false' }}"
+         style="height:500px; border:1px solid #ccc; margin-bottom:1rem;">
+    </div>
+
+    <button type="submit" class="btn btn-dark">Save Changes</button>
+    <a href="{% url 'customer_dashboard' %}" class="btn btn-secondary ms-2">Cancel</a>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  {# Leaflet JS (your base.html already has CSS in head) #}
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha512-..."
+    crossorigin=""
+  ></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      // read flag from the map div
+      const mapEl = document.getElementById("map"),
+            canEdit = mapEl.dataset.canEdit === "true";
+
+      // 1) Create map
+      const map = L.map("map").setView([0,0],2);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap contributors"
+      }).addTo(map);
+
+      let marker = null;
+
+      // 2) Reverse geocode helper
+      function reverseGeocode(lat, lon) {
+        fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`)
+          .then(res=>res.json())
+          .then(data=>{
+            const addr = data.display_name;
+            const fld = document.getElementById("id_pickup_location");
+            if(fld) fld.value = addr;
+            if(marker) marker.bindPopup(addr).openPopup();
+          }).catch(console.error);
+      }
+
+      // 3) Place marker (draggable only if allowed)
+      function placeMarker(latlng) {
+        if(marker) map.removeLayer(marker);
+        marker = L.marker(latlng, { draggable: canEdit }).addTo(map);
+        reverseGeocode(latlng.lat, latlng.lng);
+        if(canEdit) {
+          marker.on("dragend", e=>{
+            const ll = e.target.getLatLng();
+            reverseGeocode(ll.lat, ll.lng);
+          });
+        }
+      }
+
+      // 4) Geocode from existing input
+      const pickupFld = document.getElementById("id_pickup_location");
+      if(pickupFld && pickupFld.value.trim()) {
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(pickupFld.value.trim())}`)
+          .then(res=>res.json())
+          .then(data=>{
+            if(data.length) {
+              const lat = +data[0].lat, lon = +data[0].lon;
+              map.setView([lat,lon],15);
+              placeMarker(L.latLng(lat,lon));
+            }
+          }).catch(console.error);
+      }
+      else if(navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(pos=>{
+          const ll = [pos.coords.latitude,pos.coords.longitude];
+          map.setView(ll,15);
+          placeMarker(L.latLng(ll[0],ll[1]));
+        }, console.error);
+      }
+
+      // 5) Click to move marker only if allowed
+      if(canEdit) {
+        map.on("click", e=> placeMarker(e.latlng));
+      }
+    });
+  </script>
+{% endblock %}
+

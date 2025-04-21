@@ -1,0 +1,280 @@
+{% extends 'main/base.html' %}
+{% load range_filters %}
+
+{% block title %}Request Service{% endblock %}
+{% block main_class %}with-padding{% endblock %}
+
+{% if missing_info %}
+  <div class="alert alert-warning" role="alert">
+    Please update your <a href="{% url 'account_info' %}">account info</a> (address and phone number are required before submitting a service request).
+  </div>
+{% endif %}
+
+{% block content %}
+<div class="container" style="max-width: 600px;">
+  <h2>Request Car Service</h2>
+
+  {% include 'main/_dashboard_buttons.html' %}
+
+  <form method="post" id="service-request-form">
+    {% csrf_token %}
+
+    {% if form.errors %}
+      <div class="alert alert-danger">
+        <ul class="mb-0">
+          {% for field in form %}
+            {% for error in field.errors %}
+              <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+            {% endfor %}
+          {% endfor %}
+          {% for error in form.non_field_errors %}
+            <li>{{ error }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    <!-- License Plate Dropdown -->
+    <div class="mb-3 col-md-6">
+      <label for="car-select">Select Car (by license plate):</label>
+      <select id="car-select" name="car" class="form-control" required>
+        {% for car in request.user.cars.all %}
+          <option value="{{ car.id }}"
+                  data-model="{{ car.model }}"
+                  data-year="{{ car.year }}"
+                  {% if car.license_plate == locked_plate %}selected{% endif %}>
+            {{ car.license_plate }}
+          </option>
+        {% empty %}
+          <option disabled>No cars yet</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Model -->
+    <div class="mb-3 col-md-6">
+      {{ form.model.label_tag }}
+      {{ form.model }}
+      {{ form.model.errors }}
+    </div>
+
+    <!-- Year -->
+    <div class="mb-3 col-md-6">
+      {{ form.year.label_tag }}
+      {{ form.year }}
+      {{ form.year.errors }}
+    </div>
+
+    <!-- Dropoff Location -->
+    <div class="mb-3 col-md-6">
+      {{ form.dropoff_location.label_tag }}
+      {{ form.dropoff_location }}
+      {{ form.dropoff_location.errors }}
+    </div>
+
+    <!-- Job Type + Conditional Description -->
+    <div class="row mb-3">
+      <div class="col-md-6">
+        {{ form.job_type.label_tag }}
+        {{ form.job_type }}
+        {{ form.job_type.errors }}
+      </div>
+      <div class="col-md-6" id="description-container" style="display: none;">
+        {{ form.description.label_tag }}
+        {{ form.description }}
+        {{ form.description.errors }}
+      </div>
+    </div>
+
+    <!-- Map Container -->
+    <div id="map" style="height: 500px; border: 1px solid #ccc;"></div>
+    
+    <!-- Pickup Location Field (Placed under the map) -->
+    <div class="mb-3">
+      {{ form.pickup_location.label_tag }}
+      {{ form.pickup_location }}
+      {{ form.pickup_location.errors }}
+    </div>
+    
+    <button type="submit" class="btn btn-dark" {% if missing_info %}disabled{% endif %}>Submit Request</button>
+    {% if missing_info %}
+      <p class="text-danger mt-2">You cannot submit the request until you update your account information.</p>
+    {% endif %}
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    // Update fields when the car selection changes.
+    const carSelect = document.getElementById("car-select");
+    carSelect.addEventListener("change", function () {
+      const selectedOption = this.options[this.selectedIndex];
+      const model = selectedOption.dataset.model;
+      const year = selectedOption.dataset.year;
+      if (model && year) {
+        document.getElementById("id_model").value = model;
+        document.getElementById("id_year").value = year;
+      }
+    });
+
+    // Toggle job type description.
+    const jobTypeField = document.getElementById("id_job_type");
+    const descriptionContainer = document.getElementById("description-container");
+    function toggleDescription() {
+      if (jobTypeField.value === "Other") {
+        descriptionContainer.style.display = "block";
+      } else {
+        descriptionContainer.style.display = "none";
+        const descriptionInput = document.getElementById("id_description");
+        if (descriptionInput) descriptionInput.value = "";
+      }
+    }
+    jobTypeField.addEventListener("change", toggleDescription);
+    toggleDescription();
+    
+    // Initialize the Leaflet map.
+    const map = L.map('map').setView([0, 0], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Reverse geocoding using the Nominatim API.
+    function reverseGeocode(lat, lon) {
+      const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`;
+      fetch(url, {
+        method: 'GET',
+        headers: {
+          "Accept": "application/json"
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Reverse geocoded address:', data.display_name);
+        // Update the pickup location field with the retrieved address.
+        const pickupField = document.getElementById('id_pickup_location');
+        if (pickupField) {
+          pickupField.value = data.display_name;
+        }
+      })
+      .catch(error => {
+        console.error('Error retrieving address:', error);
+      });
+    }
+
+    // Function to create a draggable marker and attach events.
+    function setMarker(latlng) {
+      // Remove any existing marker.
+      if (window.currentMarker) {
+        map.removeLayer(window.currentMarker);
+      }
+      // Create a new draggable marker.
+      window.currentMarker = L.marker(latlng, { draggable: true }).addTo(map);
+      console.log("Marker placed at:", latlng);
+      
+      // Reverse geocode immediately upon placing the marker.
+      reverseGeocode(latlng.lat, latlng.lng);
+      
+      // When the user stops dragging the marker, update the address.
+      window.currentMarker.on('dragend', function(e) {
+        const newLatLng = e.target.getLatLng();
+        console.log("Marker dragged to:", newLatLng);
+        reverseGeocode(newLatLng.lat, newLatLng.lng);
+      });
+    }
+
+    // Handler for map click to set/move marker.
+    map.on('click', function(e) {
+      setMarker(e.latlng);
+    });
+
+    // Optionally center the map on the user’s current location.
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        function(position) {
+          const userLatLng = [position.coords.latitude, position.coords.longitude];
+          map.setView(userLatLng, 15);
+          // Place a draggable marker at the user's location.
+          setMarker(L.latLng(userLatLng[0], userLatLng[1]));
+          L.marker(userLatLng).addTo(map)
+            .bindPopup("You are here!").openPopup();
+        },
+        function(error) {
+          console.error("Error obtaining location:", error);
+        }
+      );
+    }
+  });
+</script>
+
+<script>
+  // Function to handle geolocation errors
+  function handleLocationError(error) {
+    let message = "";
+    switch (error.code) {
+      case error.PERMISSION_DENIED:
+        // This error may occur if the user denies the request or if location services are off in the browser/system.
+        message = "Location access is denied. Please enable location services in your browser or device settings.";
+        break;
+      case error.POSITION_UNAVAILABLE:
+        // This usually indicates that the device’s location is unavailable (e.g., location services are turned off).
+        message = "Location information is unavailable. Ensure that your device's location services are turned on.";
+        break;
+      case error.TIMEOUT:
+        message = "The request to get your location timed out. Please try again.";
+        break;
+      default:
+        message = "An unknown error occurred while retrieving your location.";
+    }
+    alert(message);
+  }
+  
+  // Function to attempt getting the user's current position
+  function detectLocation() {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        function(position) {
+          // Location is successfully obtained.
+          console.log("Location obtained:", position.coords);
+          // You can add code here to use the retrieved location.
+        },
+        function(error) {
+          // An error occurred while trying to retrieve location.
+          handleLocationError(error);
+        },
+        {
+          // Optional: set a timeout (in milliseconds)
+          timeout: 5000
+        }
+      );
+    } else {
+      alert("Geolocation is not supported by your browser.");
+    }
+  }
+  
+  // Optionally, use the Permissions API for an early check.
+  if (navigator.permissions) {
+    navigator.permissions.query({ name: 'geolocation' })
+      .then(function(permissionStatus) {
+        console.log("Geolocation permission state is:", permissionStatus.state);
+        if (permissionStatus.state === 'denied') {
+          // The permission state tells you that geolocation is disabled for your site.
+          alert("Location access is denied. Please enable it in your browser or device settings.");
+        } else {
+          // For 'granted' and 'prompt' states, try to get the location
+          detectLocation();
+        }
+      })
+      .catch(function() {
+        // If the Permissions API isn't available or fails, fallback to direct detection.
+        detectLocation();
+      });
+  } else {
+    // If the Permissions API is not supported, just try to detect the location.
+    detectLocation();
+  }
+</script>
+
+
+{% endblock %}

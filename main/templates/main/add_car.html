@@ -1,0 +1,39 @@
+{% extends 'main/base.html' %}
+{% block title %}Add Car{% endblock %}
+{% block main_class %}with-padding{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 600px;">
+  <h2>Add a New Car</h2>
+
+  <div class="d-flex justify-content-center gap-3 mb-3">
+    {% include 'main/_dashboard_buttons.html' %}
+  </div>
+
+  <form method="post" novalidate autocomplete="off">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+
+    <div class="mb-3">
+      {{ form.model.label_tag }}
+      {{ form.model }}
+      {{ form.model.errors }}
+    </div>
+
+    <div class="mb-3">
+      {{ form.year.label_tag }}
+      {{ form.year }}
+      {{ form.year.errors }}
+    </div>
+
+    <div class="mb-3">
+      {{ form.license_plate.label_tag }}
+      {{ form.license_plate }}
+      {{ form.license_plate.errors }}
+    </div>
+
+    <button type="submit" class="btn btn-dark">Add Car</button>
+  </form>
+</div>
+{% endblock %}
+

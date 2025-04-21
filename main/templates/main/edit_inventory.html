@@ -1,0 +1,17 @@
+{% extends 'main/base.html' %}
+{% block title %}Add Inventory Item{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <h2 class="mb-4">Add Inventory Item</h2>
+
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-success">Add Item</button>
+    <a href="{% url 'view_inventory' %}" class="btn btn-secondary">Cancel</a>
+  </form>
+</div>
+{% endblock %}
+
+

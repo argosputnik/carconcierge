@@ -1,0 +1,34 @@
+{% extends 'main/base.html' %}
+{% block title %}Edit Car{% endblock %}
+{% block main_class %}with-padding{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 600px;">
+  <h2>Edit Car</h2>
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+
+    <div class="mb-3">
+      {{ form.model.label_tag }}
+      {{ form.model }}
+      {{ form.model.errors }}
+    </div>
+
+    <div class="mb-3">
+      {{ form.year.label_tag }}
+      {{ form.year }}
+      {{ form.year.errors }}
+    </div>
+
+    <div class="mb-3">
+      {{ form.license_plate.label_tag }}
+      {{ form.license_plate }}
+      {{ form.license_plate.errors }}
+    </div>
+
+    <button type="submit" class="btn btn-dark">Update Car</button>
+  </form>
+</div>
+{% endblock %}
