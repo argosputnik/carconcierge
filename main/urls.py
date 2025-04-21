@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from . import views
 from django.views.generic import TemplateView
@@ -47,32 +47,22 @@ urlpatterns = [
     path('about/', TemplateView.as_view(template_name='main/about.html'), name='about'),
     path('contact/', TemplateView.as_view(template_name='main/contact.html'), name='contact'),
 
-    # ---------------------------
-    # User Administration Section
-    # ---------------------------
-
-    #--------------------------
-    #  Concierge
-    #--------------------------
-
+    # Concierge management
     path('concierge/add/', views.add_concierge, name='add_concierge'),
     path('concierges/', views.view_concierges, name='view_concierges'),
     path('concierges/edit/<int:concierge_id>/', views.edit_concierge, name='edit_concierge'),
     path('concierges/delete/<int:concierge_id>/', views.delete_concierge, name='delete_concierge'),
-
-
 
     # Owners
     path('add-owner/', views.add_owner, name='add_owner'),
     path('owners/', views.view_owners, name='view_owners'),
     path('owners/delete/<int:owner_id>/', views.delete_owner, name='delete_owner'),
 
-
     # Dealers
     path('add-dealer/', views.add_dealer, name='add_dealer'),
     path('dealers/', views.view_dealers, name='view_dealers'),
     path('dealers/edit/<int:dealer_id>/', views.edit_dealer, name='edit_dealer'),
-    path('delete-dealer/<int:dealer_id>/', views.delete_dealer, name='delete_dealer'),
+    path('dealers/delete/<int:dealer_id>/', views.delete_dealer, name='delete_dealer'),
 
     # Inventory
     path('inventory/', views.view_inventory, name='view_inventory'),
@@ -81,17 +71,17 @@ urlpatterns = [
     path('inventory/delete/<int:item_id>/', views.delete_inventory, name='delete_inventory'),
 
     # Map live location
-    # Customer reads location:
     path(
-      'service-request/<int:request_id>/location/',
-      views.service_request_location,
-      name='service_request_location'
+        'service-request/<int:request_id>/location/',
+        views.service_request_location,
+        name='service_request_location'
     ),
-    # Concierge updates location:
     path(
-      'service-request/<int:request_id>/location/update/',
-      views.update_concierge_location,
-      name='update_concierge_location'
+        'service-request/<int:request_id>/location/update/',
+        views.update_concierge_location,
+        name='update_concierge_location'
     ),
-]
 
+    # Health check endpoint (for Render)
+    path('health/', views.health, name='health'),
+]

@@ -4,7 +4,7 @@ from django.contrib.auth import login, get_user_model
 from django.contrib.auth.models import Group
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
-from django.http import HttpResponseForbidden, Http404, JsonResponse
+from django.http import HttpResponseForbidden, Http404, JsonResponse, HttpResponse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
@@ -703,3 +703,11 @@ def service_request_location(request, request_id):
         'lat': sr.concierge_latitude,
         'lng': sr.concierge_longitude,
     })
+
+
+
+    # Make render health work on free tier. Delete if upgrade on render.com
+
+def health(request):
+    return HttpResponse("OK")
+
