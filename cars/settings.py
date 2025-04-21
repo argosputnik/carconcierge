@@ -33,6 +33,7 @@ ALLOWED_HOSTS = [
     os.getenv("RENDER_EXTERNAL_HOSTNAME"),
     # local IP or localhost if you still hit it directly:
     "localhost",
+    # This was for Digital Ocean
     "24.199.122.100",
 ]
 
