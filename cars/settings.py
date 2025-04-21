@@ -127,13 +127,28 @@ TIME_ZONE = 'Asia/Tbilisi'
 
 USE_I18N = True
 
+USE_TZ = True
+
+
 MIDDLEWARE = [
-  'django.middleware.security.SecurityMiddleware',
-  'whitenoise.middleware.WhiteNoiseMiddleware',
-  # …
+    "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+
+    # ensure sessions come before auth
+    "django.contrib.sessions.middleware.SessionMiddleware",
+
+    # common + csrf
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+
+    # auth and messages in the correct order
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+
+    # any other middleware you have…
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
