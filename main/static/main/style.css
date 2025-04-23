@@ -19,7 +19,7 @@ html, body {
 
 main {
   flex: 1;
-  padding-top: 100px;
+  padding-top: 60px;
   text-align: center;
 }
 
@@ -31,6 +31,7 @@ header {
   top: 0;
   z-index: 1000;
 }
+
 
 h2 {
   padding-bottom: 1em;
@@ -231,7 +232,7 @@ select.form-control:focus {
 
 /* -------------------- Hero Section -------------------- */
 .hero-content {
-  padding-top: 100px;
+  padding-top: 30px;
 }
 
 
