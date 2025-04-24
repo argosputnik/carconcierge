@@ -6,71 +6,73 @@
 
 {% block content %}
 <div class="container mt-4">
-  <h2 class="mb-4">Service Request #{{ service_request.id }}</h2>
+  <h2 class="mb-4">Service Request Details</h2>
 
   <div class="d-flex justify-content-center gap-3 mb-3">
     {% include 'main/_dashboard_buttons.html' %}
   </div>
 
-  {# ---------- Edit Form ---------- #}
-  <form method="post" id="edit-service-request-form" class="mb-4">
-    {% csrf_token %}
-    {{ form.non_field_errors }}
+  <dl class="row">
+    <dt class="col-sm-3">Car</dt>
+    <dd class="col-sm-9">{{ service_request.car.license_plate }}</dd>
 
-    <div class="row g-3">
-      <div class="col-md-6">
-        {{ form.pickup_location.label_tag }}
-        {{ form.pickup_location }}
-        {{ form.pickup_location.errors }}
-      </div>
-      <div class="col-md-6">
-        {{ form.dropoff_location.label_tag }}
-        {{ form.dropoff_location }}
-        {{ form.dropoff_location.errors }}
-      </div>
-      <div class="col-md-6">
-        {{ form.status.label_tag }}
-        {{ form.status }}
-        {{ form.status.errors }}
-      </div>
-      <div class="col-md-6">
-        {{ form.assigned_to.label_tag }}
-        {{ form.assigned_to }}
-        {{ form.assigned_to.errors }}
-      </div>
-      <div class="col-12">
-        {{ form.description.label_tag }}
-        {{ form.description }}
-        {{ form.description.errors }}
-      </div>
-    </div>
+    <dt class="col-sm-3">Model</dt>
+    <dd class="col-sm-9">{{ service_request.model }}</dd>
 
-    <button type="submit" class="btn btn-primary mt-3">Save Changes</button>
-  </form>
+    <dt class="col-sm-3">Year</dt>
+    <dd class="col-sm-9">{{ service_request.year }}</dd>
 
-  {# ---------- Map & Live‐Tracking ---------- #}
+    <dt class="col-sm-3">Pickup Location</dt>
+    <dd class="col-sm-9" style="white-space: pre-line;">
+      {{ service_request.pickup_location }}
+    </dd>
+
+    <dt class="col-sm-3">Drop-off Location</dt>
+    <dd class="col-sm-9" style="white-space: pre-line;">
+      {{ service_request.dropoff_location }}
+    </dd>
+
+    <dt class="col-sm-3">Job Type</dt>
+    <dd class="col-sm-9">{{ service_request.job_type }}</dd>
+
+    <dt class="col-sm-3">Description</dt>
+    <dd class="col-sm-9">
+      {{ service_request.description|default:"(none)" }}
+    </dd>
+
+    <dt class="col-sm-3">Status</dt>
+    <dd class="col-sm-9">{{ service_request.status }}</dd>
+
+    <dt class="col-sm-3">Assigned To</dt>
+    <dd class="col-sm-9">
+      {% if service_request.assigned_to %}
+        {{ service_request.assigned_to.get_full_name }}
+      {% else %}
+        (unassigned)
+      {% endif %}
+    </dd>
+  </dl>
+
+  <!-- Map container -->
   <div
     id="map"
     data-address="{{ service_request.pickup_location|escapejs }}"
     data-share="{{ service_request.share_location|yesno:'true,false' }}"
     data-status="{{ service_request.status }}"
-    style="height:500px; border:1px solid #ccc;"
+    style="height: 400px; border:1px solid #ccc; margin-bottom:1rem;"
   ></div>
 
-  {# ---------- Multi-line Display ---------- #}
-  <address
-    class="fs-6 text-muted mt-3"
-    style="white-space: pre-line;"
-  >
+  <!-- Also show the pickup address here as multi-line, if you like -->
+  <address class="fs-6 text-muted mb-4" style="white-space: pre-line;">
     {{ service_request.pickup_location }}
   </address>
 
-  <div class="mt-4">
-    <a href="{% url 'customer_dashboard' %}" class="btn btn-secondary me-2">
+  <div class="d-flex gap-2">
+    <a href="{% url 'customer_dashboard' %}" class="btn btn-secondary">
       ← Back to Dashboard
     </a>
-    <a href="{% url 'edit_service_request' service_request.id %}" class="btn btn-outline-primary">
-      Open in Full Edit Page
+    <a href="{% url 'edit_service_request' service_request.id %}" class="btn btn-primary">
+      Edit Request
     </a>
   </div>
 </div>
@@ -85,35 +87,33 @@ document.addEventListener("DOMContentLoaded", () => {
         status  = mapEl.dataset.status,
         role    = "{{ request.user.role }}";
 
-  // 1) Init map
-  const map = L.map("map").setView([0,0],2);
+  // 1) Initialize Leaflet map
+  const map = L.map("map").setView([0,0], 2);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution:"© OpenStreetMap contributors"
+    attribution: "© OpenStreetMap contributors"
   }).addTo(map);
 
-  // 2) Drop customer pickup marker
+  // 2) Drop the pickup marker
   if (address) {
-    fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`
-    )
-    .then(r=>r.json())
-    .then(results=>{
-      if (!results.length) return;
-      const { lat, lon } = results[0];
-      map.setView([lat,lon],15);
-      L.marker([+lat,+lon])
-        .addTo(map)
-        .bindPopup(address)
-        .openPopup();
-    })
-    .catch(console.error);
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`)
+      .then(r => r.json())
+      .then(results => {
+        if (!results.length) return;
+        const { lat, lon } = results[0];
+        map.setView([lat, lon], 15);
+        L.marker([+lat, +lon])
+          .addTo(map)
+          .bindPopup(address)
+          .openPopup();
+      })
+      .catch(console.error);
   }
 
-  // 3) Live‐tracking during Delivery
+  // 3) Live-tracking (if status is "Delivery")
   if (status === "Delivery") {
-    // a) Concierge: watch & POST, show default blue pin
+    // a) Concierge: watch & POST location
     if (role === "concierge" && navigator.geolocation) {
-      navigator.geolocation.watchPosition(pos=>{
+      navigator.geolocation.watchPosition(pos => {
         const ll = [pos.coords.latitude, pos.coords.longitude];
         if (!window.conciergeMarker) {
           window.conciergeMarker = L.marker(ll).addTo(map)
@@ -129,15 +129,15 @@ document.addEventListener("DOMContentLoaded", () => {
           },
           body: JSON.stringify({ lat: ll[0], lng: ll[1] })
         }).catch(console.error);
-      }, console.error, { enableHighAccuracy:true, maximumAge:5000 });
+      }, console.error, { enableHighAccuracy: true, maximumAge: 5000 });
     }
-    // b) Customer (or dealer/owner): poll and use same default blue pin
+    // b) Customer/Owner: poll concierge location
     else if (share) {
       let conciergeMarker = null;
       const poll = () => {
         fetch("{% url 'service_request_location' service_request.id %}")
-          .then(r=>r.json())
-          .then(data=>{
+          .then(r => r.json())
+          .then(data => {
             if (!data.lat || !data.lng) return;
             const ll = [data.lat, data.lng];
             if (!conciergeMarker) {
