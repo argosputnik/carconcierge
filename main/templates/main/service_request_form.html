@@ -21,71 +21,91 @@
     {{ form.non_field_errors }}
 
     <!-- License Plate -->
-    <div class="form-group mb-3">
-      <label for="car-select">License plate:</label>
-      <select id="car-select"
-              name="car"
-              class="form-control"
-              style="max-width: 200px;"
-              required>
-        {% for car in request.user.cars.all %}
-          <option
-            value="{{ car.id }}"
-            data-model="{{ car.model }}"
-            data-year="{{ car.year }}"
-            {% if car.license_plate == locked_plate %}selected{% endif %}
-          >{{ car.license_plate }}</option>
-        {% empty %}
-          <option disabled>No cars yet</option>
-        {% endfor %}
-      </select>
+    <div class="row mb-3 align-items-center">
+      <label for="car-select" class="col-sm-4 col-form-label text-sm-end">
+        License plate:
+      </label>
+      <div class="col-sm-8">
+        <select id="car-select"
+                name="car"
+                class="form-control"
+                style="max-width: 200px;"
+                required>
+          {% for car in request.user.cars.all %}
+            <option
+              value="{{ car.id }}"
+              data-model="{{ car.model }}"
+              data-year="{{ car.year }}"
+              {% if car.license_plate == locked_plate %}selected{% endif %}
+            >{{ car.license_plate }}</option>
+          {% empty %}
+            <option disabled>No cars yet</option>
+          {% endfor %}
+        </select>
+      </div>
     </div>
 
     <!-- Pickup Location -->
-    <div class="form-group mb-3">
-      {{ form.pickup_location.label_tag }}
-      {{ form.pickup_location }}
-      {{ form.pickup_location.errors }}
+    <div class="row mb-3 align-items-center">
+      <label for="id_pickup_location" class="col-sm-4 col-form-label text-sm-end">
+        Pickup location:
+      </label>
+      <div class="col-sm-8">
+        {{ form.pickup_location }}
+        <div class="text-danger small">{{ form.pickup_location.errors }}</div>
+      </div>
     </div>
 
     <!-- Dropoff Location -->
-    <div class="form-group mb-3">
-      {{ form.dropoff_location.label_tag }}
-      {{ form.dropoff_location }}
-      {{ form.dropoff_location.errors }}
+    <div class="row mb-3 align-items-center">
+      <label for="id_dropoff_location" class="col-sm-4 col-form-label text-sm-end">
+        Dropoff location:
+      </label>
+      <div class="col-sm-8">
+        {{ form.dropoff_location }}
+        <div class="text-danger small">{{ form.dropoff_location.errors }}</div>
+      </div>
     </div>
 
     <!-- Job Type -->
-    <div class="form-group mb-3">
-      {{ form.job_type.label_tag }}
-      {{ form.job_type }}
-      {{ form.job_type.errors }}
+    <div class="row mb-3 align-items-center">
+      <label for="id_job_type" class="col-sm-4 col-form-label text-sm-end">
+        Job type:
+      </label>
+      <div class="col-sm-8">
+        {{ form.job_type }}
+        <div class="text-danger small">{{ form.job_type.errors }}</div>
+      </div>
     </div>
 
     <!-- Conditional Description -->
-    <div class="form-group mb-3"
-         id="description-container"
-         style="display: none;">
-      {{ form.description.label_tag }}
-      {{ form.description }}
-      {{ form.description.errors }}
+    <div id="description-container" class="row mb-3 align-items-center" style="display:none;">
+      <label for="id_description" class="col-sm-4 col-form-label text-sm-end">
+        Description:
+      </label>
+      <div class="col-sm-8">
+        {{ form.description }}
+        <div class="text-danger small">{{ form.description.errors }}</div>
+      </div>
     </div>
 
-    <!-- Submit Button -->
-    <div class="form-group mb-3">
-      <button type="submit"
-              class="btn btn-dark"
-              {% if missing_info %}disabled{% endif %}>
-        Submit Request
-      </button>
+    <!-- Submit Button (centered under controls) -->
+    <div class="row mb-3">
+      <div class="offset-sm-4 col-sm-8">
+        <button type="submit" class="btn btn-dark" {% if missing_info %}disabled{% endif %}>
+          Submit Request
+        </button>
+      </div>
     </div>
 
-    <!-- Map placeholder (full-width, restored) -->
-    <div id="map"
-         style="height: 400px;
-                border: 1px solid #ccc;
-                margin-bottom: 1rem;
-                margin-top: 1rem;">
+    <!-- Map placeholder (full-width) -->
+    <div class="row mb-3">
+      <div class="col-12">
+        <div id="map"
+             style="height: 400px;
+                    border: 1px solid #ccc;">
+        </div>
+      </div>
     </div>
   </form>
 </div>
@@ -94,7 +114,7 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  // your existing JS unchanged…
+  // Populate model/year when car changes
   const carSelect = document.getElementById('car-select');
   carSelect.addEventListener('change', () => {
     const opt = carSelect.options[carSelect.selectedIndex];
@@ -102,15 +122,16 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('id_year').value  = opt.dataset.year  || '';
   });
 
+  // Toggle description field
   const jobType = document.getElementById('id_job_type');
   const descCont = document.getElementById('description-container');
   function toggleDesc() {
-    descCont.style.display = (jobType.value === 'Other') ? 'block' : 'none';
+    descCont.style.display = (jobType.value === 'Other') ? 'flex' : 'none';
   }
   jobType.addEventListener('change', toggleDesc);
   toggleDesc();
 
-  // Leaflet + reverse-geocode, etc…
+  // Leaflet map + geolocation
   let map, marker;
   const pickupInput = document.getElementById('id_pickup_location');
 
@@ -133,7 +154,8 @@ document.addEventListener('DOMContentLoaded', () => {
           marker.bindPopup(data.display_name).openPopup();
           pickupInput.dispatchEvent(new Event('change'));
         }
-      }).catch(console.error);
+      })
+      .catch(console.error);
 
     marker.on('dragend', e => {
       const p = e.target.getLatLng();
@@ -160,14 +182,11 @@ document.addEventListener('DOMContentLoaded', () => {
     onGeoError({ message: 'Unsupported' });
   }
 
-  // Optional: formatting address lines in an #address-display element
+  // Optional: format address lines into an #address-display element
   const display = document.getElementById('address-display');
   pickupInput.addEventListener('change', () => {
     const raw = pickupInput.value.trim();
-    if (!raw) {
-      display.textContent = '';
-      return;
-    }
+    if (!raw) { display.textContent = ''; return; }
     fetch(
       'https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&q=' +
       encodeURIComponent(raw)
@@ -192,6 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
      }).catch(console.error);
   });
 
+  // Trigger formatting on load if there's an initial value
   if (pickupInput.value) {
     pickupInput.dispatchEvent(new Event('change'));
   }
