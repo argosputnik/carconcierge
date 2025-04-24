@@ -274,3 +274,27 @@ select.form-control:focus {
   }
 }
 
+
+/* ─── Horizontal form layout ───────────────────────────────────────── */
+.form-group {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+/* make all labels the same fixed width & right-align them */
+.form-group label {
+  flex: 0 0 160px;    /* adjust to whatever width you need */
+  margin-right: 0.5rem;
+  text-align: right;
+}
+
+/* let your inputs/selects/textareas fill the rest of the space */
+.form-group .form-control,
+.form-group input,
+.form-group select,
+.form-group textarea {
+  flex: 1 1 auto;
+  margin: 0;          /* remove any default margins that would break the flex */
+}
+
