@@ -148,17 +148,16 @@ def concierge_dashboard(request):
 @login_required
 @user_passes_test(is_dealer)
 def dealer_dashboard(request):
-    status_filter = request.GET.get('status', 'all')
+    # only delivery‐status requests assigned to this dealer
     open_requests = ServiceRequest.objects.filter(
+        status='In Service',
         assigned_to=request.user
-    ).exclude(status__in=['Waiting for Payment', 'Pending'])
-    if status_filter != 'all':
-        open_requests = open_requests.filter(status=status_filter)
+    ).order_by('-requested_at')
+
     return render(request, 'main/dealer_dashboard.html', {
         'open_requests': open_requests,
-        'status_filter': status_filter,
+        'open_request_count': open_requests.count(),
     })
-
 
 @login_required
 def owner_dashboard(request):
@@ -704,6 +703,16 @@ def service_request_location(request, request_id):
         'lng': sr.concierge_longitude,
     })
 
+
+# Allow dealer to return to delivery once in service is finished.
+
+@require_POST
+def set_request_delivery(request, pk):
+    req = get_object_or_404(ServiceRequest, pk=pk, assigned_to=request.user)
+    req.status = 'Delivery'
+    req.assigned_to = None   # so the concierge can pick it up again
+    req.save()
+    return redirect('dealer_dashboard')
 
 
     # Make render health work on free tier. Delete if upgrade on render.com

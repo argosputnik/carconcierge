@@ -5,7 +5,9 @@
 {% block content %}
 <div class="container">
   <h2 class="text-center">Welcome, {{ user.first_name }}</h2>
-  <p class="text-center mb-4">Showing <strong>Delivery</strong> service requests only.</p>
+  <p class="text-center mb-4">
+    Showing <strong>Delivery</strong> service requests only.
+  </p>
 
   <div class="d-flex justify-content-center gap-3 mb-3">
     {% include 'main/_dashboard_buttons.html' %}
@@ -47,7 +49,9 @@
         {% endif %}
       {% empty %}
         <tr>
-          <td colspan="6" class="text-center">No delivery requests.</td>
+          <td colspan="6" class="text-center">
+            No delivery requests.
+          </td>
         </tr>
       {% endfor %}
     </tbody>
