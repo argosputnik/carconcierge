@@ -16,13 +16,24 @@
     <!-- … your details here … -->
   </dl>
 
-  <div
-    id="map"
-    data-address="{{ service_request.pickup_location|escapejs }}"
-    data-share="{{ service_request.share_location|yesno:'true,false' }}"
-    data-status="{{ service_request.status }}"
-    style="height:500px; border:1px solid #ccc;"
-  ></div>
+<!-- map placeholder with data-address for your JS -->
+<div
+  id="map"
+  data-address="{{ service_request.pickup_location|escapejs }}"
+  data-share="{{ service_request.share_location|yesno:'true,false' }}"
+  data-status="{{ service_request.status }}"
+  style="height:500px; border:1px solid #ccc;"
+></div>
+
+<!-- multi-line display of the same address -->
+<address
+  class="fs-6 text-muted mt-3"
+  style="white-space: pre-line;"
+>
+  {{ service_request.pickup_location }}
+</address>
+
+
 
   <div class="mt-4">
     <a href="{% url 'customer_dashboard' %}" class="btn btn-secondary me-2">

@@ -82,12 +82,20 @@
       {{ form.pickup_location.errors }}
     </div>
 
-    <!-- Multi-line formatted display -->
-    <address
-      id="address-display"
-      class="fs-6 text-muted mb-3"
-      style="white-space: pre-line;"
-    ></address>
+      <!-- Pickup Location -->
+  <div class="mb-3">
+    {{ form.pickup_location.label_tag }}
+    {{ form.pickup_location }}
+    {{ form.pickup_location.errors }}
+  </div>
+
+  <!-- ← INSERT THIS ↓ -->
+  <address
+    id="address-display"
+    class="fs-6 text-muted mb-3"
+    style="white-space: pre-line;"
+  ></address>
+
 
     <button type="submit" class="btn btn-dark" {% if missing_info %}disabled{% endif %}>
       Submit Request
@@ -107,16 +115,17 @@ document.addEventListener('DOMContentLoaded', () => {
   // Populate model/year when car changes
   const carSelect = document.getElementById('car-select');
   carSelect.addEventListener('change', () => {
-    const opt = carSelect.options[carSelect.selectedIndex];
+    const opt   = carSelect.options[carSelect.selectedIndex];
     document.getElementById('id_model').value = opt.dataset.model || '';
-    document.getElementById('id_year').value = opt.dataset.year  || '';
+    document.getElementById('id_year').value  = opt.dataset.year  || '';
   });
 
   // Toggle description field
   const jobType = document.getElementById('id_job_type');
   const descCont = document.getElementById('description-container');
   function toggleDesc() {
-    descCont.style.display = (jobType.value === 'Other') ? 'block' : 'none';
+    if (jobType.value === 'Other') descCont.style.display = 'block';
+    else descCont.style.display = 'none';
   }
   jobType.addEventListener('change', toggleDesc);
   toggleDesc();
@@ -142,11 +151,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data.display_name) {
           pickupInput.value = data.display_name;
           marker.bindPopup(data.display_name).openPopup();
-          pickupInput.dispatchEvent(new Event('change'));
         }
       })
       .catch(console.error);
-
     marker.on('dragend', e => {
       const p = e.target.getLatLng();
       placeMarker(p.lat, p.lng);
@@ -154,8 +161,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function onGeoSuccess(pos) {
-    initMap([pos.coords.latitude, pos.coords.longitude], 15);
-    placeMarker(pos.coords.latitude, pos.coords.longitude);
+    const lat = pos.coords.latitude,
+          lng = pos.coords.longitude;
+    initMap([lat, lng], 15);
+    placeMarker(lat, lng);
   }
 
   function onGeoError(err) {
@@ -164,52 +173,79 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (navigator.geolocation) {
-    navigator.geolocation.watchPosition(onGeoSuccess, onGeoError, {
-      enableHighAccuracy: true, maximumAge: 0, timeout: 15000
-    });
+    navigator.geolocation.watchPosition(
+      onGeoSuccess,
+      onGeoError,
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
+    );
   } else {
     console.warn('Geolocation not supported.');
     onGeoError({ message: 'Unsupported' });
   }
-
-  // Format and display address lines
-  const display = document.getElementById('address-display');
-  pickupInput.addEventListener('change', () => {
-    const raw = pickupInput.value.trim();
-    if (!raw) {
-      display.textContent = '';
-      return;
-    }
-    fetch(
-      'https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&q=' +
-      encodeURIComponent(raw)
-    )
-    .then(r => r.json())
-    .then(results => {
-      if (!results.length) return;
-      const addr = results[0].address;
-      const lines = [];
-      if (addr.house_number || addr.road) {
-        lines.push(`${addr.house_number||''} ${addr.road||''}`.trim());
-      }
-      for (let fld of ['suburb','city','town','village']) {
-        if (addr[fld]) { lines.push(addr[fld]); break; }
-      }
-      if (addr.state || addr.postcode) {
-        lines.push(`${addr.state||''} ${addr.postcode||''}`.trim());
-      }
-      if (addr.country) {
-        lines.push(addr.country);
-      }
-      display.textContent = lines.join('\n');
-    })
-    .catch(console.error);
-  });
-
-  // Trigger formatting on load if there's an initial value
-  if (pickupInput.value) {
-    pickupInput.dispatchEvent(new Event('change'));
-  }
 });
 </script>
+
+<script>
+/*
+⚠️ Geolocation only works on secure origins:
+ - HTTPS with a valid cert, or
+ - http://localhost / 127.0.0.1 for dev
+*/
+</script>
+
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // … your existing Leaflet/geolocation/map code …
+
+    // grab the pickup <input> and the <address> we just added
+    const pickupInput = document.getElementById('id_pickup_location');
+    const display    = document.getElementById('address-display');
+
+    // whenever it changes, rebuild the lines and repaint
+    pickupInput.addEventListener('change', () => {
+      const raw = pickupInput.value.trim();
+      if (!raw) {
+        display.textContent = '';
+        return;
+      }
+
+      // split into logical pieces (street / locality / region+postal / country)
+      // you can tweak which address fields you pick
+      fetch(
+        'https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&q='
+        + encodeURIComponent(raw)
+      )
+      .then(r => r.json())
+      .then(results => {
+        if (!results.length) return;
+        const addr = results[0].address;
+        const lines = [];
+
+        // street
+        if (addr.house_number || addr.road) {
+          lines.push(`${addr.house_number||''} ${addr.road||''}`.trim());
+        }
+        // city/suburb/town
+        for (let fld of ['suburb','city','town','village']) {
+          if (addr[fld]) { lines.push(addr[fld]); break; }
+        }
+        // state + postal
+        if (addr.state || addr.postcode) {
+          lines.push(`${addr.state||''} ${addr.postcode||''}`.trim());
+        }
+        // country
+        if (addr.country) {
+          lines.push(addr.country);
+        }
+
+        // render as real line breaks
+        display.textContent = lines.join('\n');
+      })
+      .catch(console.error);
+    });
+  });
+</script>
+
+
 {% endblock %}

@@ -41,8 +41,8 @@
       {% for request in open_requests %}
         <tr>
           <td>{{ request.requested_at|date:"Y-m-d H:i" }}</td>
-          <td>{{ request.pickup_location }}</td>
-          <td>{{ request.dropoff_location }}</td>
+          <td style="white-space: pre-line;">{{ request.pickup_location }}</td>
+          <td style="white-space: pre-line;">{{ request.dropoff_location }}</td>
           <td>{{ request.status }}</td>
           <td>{{ request.assigned_to.get_full_name|default:"-" }}</td>
           <td class="text-end text-nowrap">
