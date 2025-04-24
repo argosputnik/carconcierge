@@ -3,8 +3,8 @@ from django.contrib.auth import login
 from django.contrib import messages
 from django import forms
 from django.db import connection
-from django.contrib.auth.decorators import login_required, user_passes_test
-from django.http import HttpResponseForbidden
+from django.contrib.auth.decorators import login_required, user_passes_test, require_POST
+from django.http import HttpResponseForbidden, HttpResponse
 from django.contrib.auth import get_user_model
 
 from .forms import CustomSignupForm, ServiceRequestForm, EditRequestForm
