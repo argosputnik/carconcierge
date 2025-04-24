@@ -22,7 +22,8 @@
 
     <!-- Select Car -->
     <div class="mb-3 col-md-6">
-      <label for="car-select">Select Car (by license plate):</label>
+	    <!--      <label for="car-select">Select Car (by license plate):</label>  -->
+      {{form.license_plate.label_tag}}
       <select id="car-select" name="car" class="form-control" required>
         {% for car in request.user.cars.all %}
           <option 
