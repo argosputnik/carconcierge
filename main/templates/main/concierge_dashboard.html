@@ -47,11 +47,14 @@
         <td>{{ request.pickup_location }}</td>
         <td>{{ request.dropoff_location }}</td>
         <td>{{ request.status }}</td>
-        <td>{{ request.assigned_to.get_full_name|default:"-" }}</td>
-        <td>
-          <a href="{% url 'concierge_view_service_request' request.id %}" class="btn btn-dark">View</a>
-          <a href="{% url 'edit_service_request' request.id %}" class="btn btn-dark">Edit</a>
-        </td>
+        <td>{{ request.assigned_to.get_full_name|default:"-" }}</td>i
+	<td class="text-end text-nowrap">
+  <div class="d-inline-flex flex-nowrap gap-1">
+    <a … class="btn btn-dark btn-sm">View</a>
+    <a … class="btn btn-dark btn-sm">Edit</a>
+  </div>
+</td>
+
       </tr>
       {% empty %}
       <tr>
