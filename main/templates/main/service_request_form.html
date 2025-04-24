@@ -25,7 +25,7 @@
       {{ form.license_plate.label_tag }}
       <select id="car-select" name="car" class="form-control" required>
         {% for car in request.user.cars.all %}
-          <option 
+          <option
             value="{{ car.id }}"
             data-model="{{ car.model }}"
             data-year="{{ car.year }}"
@@ -72,16 +72,127 @@
       </button>
     </div>
 
-    <!-- Map placeholder -->
-    <div class="form-group">
-      <div id="map" style="height: 400px; border:1px solid #ccc;"></div>
+    <!-- Map placeholder (restored) -->
+    <div id="map"
+         style="height: 400px;
+                border: 1px solid #ccc;
+                margin-bottom: 1rem;
+                margin-top: 1rem;">
     </div>
+
   </form>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-  // … your existing script unchanged …
+document.addEventListener('DOMContentLoaded', () => {
+  // Populate model/year when car changes
+  const carSelect = document.getElementById('car-select');
+  carSelect.addEventListener('change', () => {
+    const opt = carSelect.options[carSelect.selectedIndex];
+    document.getElementById('id_model').value = opt.dataset.model || '';
+    document.getElementById('id_year').value = opt.dataset.year  || '';
+  });
+
+  // Toggle description field
+  const jobType = document.getElementById('id_job_type');
+  const descCont = document.getElementById('description-container');
+  function toggleDesc() {
+    descCont.style.display = (jobType.value === 'Other') ? 'block' : 'none';
+  }
+  jobType.addEventListener('change', toggleDesc);
+  toggleDesc();
+
+  // Leaflet map + geolocation
+  let map, marker;
+  const pickupInput = document.getElementById('id_pickup_location');
+
+  function initMap(center, zoom) {
+    map = L.map('map').setView(center, zoom);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    map.on('click', e => placeMarker(e.latlng.lat, e.latlng.lng));
+  }
+
+  function placeMarker(lat, lng) {
+    if (marker) map.removeLayer(marker);
+    marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.display_name) {
+          pickupInput.value = data.display_name;
+          marker.bindPopup(data.display_name).openPopup();
+          pickupInput.dispatchEvent(new Event('change'));
+        }
+      })
+      .catch(console.error);
+
+    marker.on('dragend', e => {
+      const p = e.target.getLatLng();
+      placeMarker(p.lat, p.lng);
+    });
+  }
+
+  function onGeoSuccess(pos) {
+    initMap([pos.coords.latitude, pos.coords.longitude], 15);
+    placeMarker(pos.coords.latitude, pos.coords.longitude);
+  }
+
+  function onGeoError(err) {
+    console.warn('Geolocation error:', err.message);
+    initMap([0,0], 2);
+  }
+
+  if (navigator.geolocation) {
+    navigator.geolocation.watchPosition(onGeoSuccess, onGeoError, {
+      enableHighAccuracy: true, maximumAge: 0, timeout: 15000
+    });
+  } else {
+    console.warn('Geolocation not supported.');
+    onGeoError({ message: 'Unsupported' });
+  }
+
+  // Format and display address lines
+  const display = document.getElementById('address-display');
+  pickupInput.addEventListener('change', () => {
+    const raw = pickupInput.value.trim();
+    if (!raw) {
+      display.textContent = '';
+      return;
+    }
+    fetch(
+      'https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&q=' +
+      encodeURIComponent(raw)
+    )
+    .then(r => r.json())
+    .then(results => {
+      if (!results.length) return;
+      const addr = results[0].address;
+      const lines = [];
+      if (addr.house_number || addr.road) {
+        lines.push(`${addr.house_number||''} ${addr.road||''}`.trim());
+      }
+      for (let fld of ['suburb','city','town','village']) {
+        if (addr[fld]) { lines.push(addr[fld]); break; }
+      }
+      if (addr.state || addr.postcode) {
+        lines.push(`${addr.state||''} ${addr.postcode||''}`.trim());
+      }
+      if (addr.country) {
+        lines.push(addr.country);
+      }
+      display.textContent = lines.join('\n');
+    })
+    .catch(console.error);
+  });
+
+  // Trigger formatting on load if there's an initial value
+  if (pickupInput.value) {
+    pickupInput.dispatchEvent(new Event('change'));
+  }
+});
 </script>
 {% endblock %}
