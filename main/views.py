@@ -189,6 +189,22 @@ def my_cars(request):
     cars = Car.objects.filter(owner=request.user)
     return render(request, 'main/my_cars.html', {'cars': cars})
 
+
+@login_required
+def add_car(request):
+    if request.method == 'POST':
+        form = AddCarForm(request.POST, user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Car added successfully.")
+            return redirect('my_cars')
+    else:
+        form = AddCarForm(user=request.user)
+    return render(request, 'main/add_car.html', {'form': form})
+
+
+
+
 @login_required
 def delete_car(request, car_id):
     car = get_object_or_404(Car, id=car_id, owner=request.user)
@@ -201,6 +217,7 @@ class CarForm(forms.ModelForm):
     class Meta:
         model = Car
         fields = ['model', 'year', 'license_plate']
+
 
 @login_required
 def edit_car(request, car_id):
