@@ -82,6 +82,13 @@ class ServiceRequestForm(BootstrapFormMixin, forms.Form):
         kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
 
+    def clean_pickup_location(self):
+    raw = self.cleaned_data['pickup_location']
+    # split on commas (or however), then re-join with \n
+    parts = [p.strip() for p in raw.split(',') if p.strip()]
+    return "\n".join(parts)
+
+
 # --------------------------
 # Edit Request Form
 # --------------------------
