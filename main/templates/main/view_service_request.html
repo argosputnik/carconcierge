@@ -1,129 +1,52 @@
+{# templates/main/view_service_request.html #}
 {% extends 'main/base.html' %}
-{% load static %}
-
 {% block title %}Service Request #{{ service_request.id }}{% endblock %}
-{% block main_class %}with-padding{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
   <h2 class="mb-4">Service Request Details</h2>
 
-  <div class="d-flex justify-content-center gap-3 mb-3">
-    {% include 'main/_dashboard_buttons.html' %}
-  </div>
-
   <dl class="row">
-    <!-- … your details here … -->
+    <dt class="col-sm-3">Request ID</dt>
+    <dd class="col-sm-9">{{ service_request.id }}</dd>
+
+    <dt class="col-sm-3">Requested At</dt>
+    <dd class="col-sm-9">
+      {{ service_request.requested_at|date:"Y‑m‑d H:i" }}
+    </dd>
+
+    <dt class="col-sm-3">Pickup Location</dt>
+    <dd class="col-sm-9">{{ service_request.pickup_location }}</dd>
+
+    <dt class="col-sm-3">Dropoff Location</dt>
+    <dd class="col-sm-9">{{ service_request.dropoff_location }}</dd>
+
+    <dt class="col-sm-3">Status</dt>
+    <dd class="col-sm-9">{{ service_request.status }}</dd>
+
+    <dt class="col-sm-3">Assigned To</dt>
+    <dd class="col-sm-9">
+      {% if service_request.assigned_to %}
+        {{ service_request.assigned_to.get_full_name }}
+      {% else %}
+        <em>Unassigned</em>
+      {% endif %}
+    </dd>
+
+    {% if service_request.description %}
+      <dt class="col-sm-3">Description</dt>
+      <dd class="col-sm-9">{{ service_request.description }}</dd>
+    {% endif %}
   </dl>
-
-<!-- map placeholder with data-address for your JS -->
-<div
-  id="map"
-  data-address="{{ service_request.pickup_location|escapejs }}"
-  data-share="{{ service_request.share_location|yesno:'true,false' }}"
-  data-status="{{ service_request.status }}"
-  style="height:500px; border:1px solid #ccc;"
-></div>
-
-<!-- multi-line display of the same address -->
-<address
-  class="fs-6 text-muted mt-3"
-  style="white-space: pre-line;"
->
-  {{ service_request.pickup_location }}
-</address>
-
-
 
   <div class="mt-4">
     <a href="{% url 'customer_dashboard' %}" class="btn btn-secondary me-2">
       ← Back to Dashboard
     </a>
-    <a href="{% url 'edit_service_request' service_request.id %}" class="btn btn-primary">
+    <a href="{% url 'edit_service_request' service_request.id %}" 
+       class="btn btn-primary">
       Edit
     </a>
   </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  const mapEl   = document.getElementById("map"),
-        address = mapEl.dataset.address,
-        share   = mapEl.dataset.share === "true",
-        status  = mapEl.dataset.status,
-        role    = "{{ request.user.role }}";
-
-  // 1) Init map
-  const map = L.map("map").setView([0,0],2);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution:"© OpenStreetMap contributors"
-  }).addTo(map);
-
-  // 2) Drop customer pickup marker
-  if (address) {
-    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`)
-      .then(r=>r.json())
-      .then(results=>{
-        if (!results.length) return;
-        const { lat, lon } = results[0];
-        map.setView([lat,lon],15);
-        L.marker([+lat,+lon])
-          .addTo(map)
-          .bindPopup(address)
-          .openPopup();
-      })
-      .catch(console.error);
-  }
-
-  // 3) Live‐tracking during Delivery
-  if (status==="Delivery") {
-    // a) Concierge: watch & POST, show default blue pin
-    if (role==="concierge" && navigator.geolocation) {
-      navigator.geolocation.watchPosition(pos=>{
-        const ll = [pos.coords.latitude, pos.coords.longitude];
-
-        if (!window.conciergeMarker) {
-          window.conciergeMarker = L.marker(ll).addTo(map)
-            .bindPopup("You are here").openPopup();
-        } else {
-          window.conciergeMarker.setLatLng(ll).openPopup();
-        }
-
-        fetch("{% url 'update_concierge_location' service_request.id %}", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": "{{ csrf_token }}"
-          },
-          body: JSON.stringify({ lat: ll[0], lng: ll[1] })
-        }).catch(console.error);
-
-      }, console.error, { enableHighAccuracy:true, maximumAge:5000 });
-    }
-    // b) Customer (or dealer/owner): poll and use same default blue pin
-    else if (share) {
-      let conciergeMarker = null;
-      const poll = () => {
-        fetch("{% url 'service_request_location' service_request.id %}")
-          .then(r=>r.json())
-          .then(data=>{
-            if (!data.lat || !data.lng) return;
-            const ll = [data.lat, data.lng];
-            if (!conciergeMarker) {
-              conciergeMarker = L.marker(ll).addTo(map)
-                .bindPopup("Your Concierge");
-            } else {
-              conciergeMarker.setLatLng(ll);
-            }
-          })
-          .catch(console.error);
-      };
-      poll();
-      setInterval(poll, 5000);
-    }
-  }
-});
-</script>
 {% endblock %}
