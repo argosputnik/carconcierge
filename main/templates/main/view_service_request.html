@@ -12,6 +12,7 @@
     {% include 'main/_dashboard_buttons.html' %}
   </div>
 
+  <!-- 1) DETAILS ABOVE THE MAP -->
   <dl class="row">
     <dt class="col-sm-3">Car</dt>
     <dd class="col-sm-9">{{ service_request.car.license_plate }}</dd>
@@ -36,9 +37,7 @@
     <dd class="col-sm-9">{{ service_request.job_type }}</dd>
 
     <dt class="col-sm-3">Description</dt>
-    <dd class="col-sm-9">
-      {{ service_request.description|default:"(none)" }}
-    </dd>
+    <dd class="col-sm-9">{{ service_request.description|default:"(none)" }}</dd>
 
     <dt class="col-sm-3">Status</dt>
     <dd class="col-sm-9">{{ service_request.status }}</dd>
@@ -53,19 +52,12 @@
     </dd>
   </dl>
 
-  <!-- Map container -->
+  <!-- 2) MAP PULLED FROM PICKUP ADDRESS -->
   <div
     id="map"
     data-address="{{ service_request.pickup_location|escapejs }}"
-    data-share="{{ service_request.share_location|yesno:'true,false' }}"
-    data-status="{{ service_request.status }}"
     style="height: 400px; border:1px solid #ccc; margin-bottom:1rem;"
   ></div>
-
-  <!-- Also show the pickup address here as multi-line, if you like -->
-  <address class="fs-6 text-muted mb-4" style="white-space: pre-line;">
-    {{ service_request.pickup_location }}
-  </address>
 
   <div class="d-flex gap-2">
     <a href="{% url 'customer_dashboard' %}" class="btn btn-secondary">
@@ -79,23 +71,27 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  const mapEl   = document.getElementById("map"),
-        address = mapEl.dataset.address,
-        share   = mapEl.dataset.share === "true",
-        status  = mapEl.dataset.status,
-        role    = "{{ request.user.role }}";
+  {{ block.super }}
+  <!-- ensure Leaflet JS is loaded here or in your base -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-  // 1) Initialize Leaflet map
-  const map = L.map("map").setView([0,0], 2);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: "© OpenStreetMap contributors"
-  }).addTo(map);
+  <script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const mapEl   = document.getElementById("map"),
+          address = mapEl.dataset.address;
 
-  // 2) Drop the pickup marker
-  if (address) {
-    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`)
+    // 1) initialize map
+    const map = L.map("map").setView([0,0], 2);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap contributors"
+    }).addTo(map);
+
+    // 2) geocode the pickup address
+    if (address) {
+      fetch(
+        "https://nominatim.openstreetmap.org/search?format=json&q=" +
+        encodeURIComponent(address)
+      )
       .then(r => r.json())
       .then(results => {
         if (!results.length) return;
@@ -107,52 +103,7 @@ document.addEventListener("DOMContentLoaded", () => {
           .openPopup();
       })
       .catch(console.error);
-  }
-
-  // 3) Live-tracking (if status is "Delivery")
-  if (status === "Delivery") {
-    // a) Concierge: watch & POST location
-    if (role === "concierge" && navigator.geolocation) {
-      navigator.geolocation.watchPosition(pos => {
-        const ll = [pos.coords.latitude, pos.coords.longitude];
-        if (!window.conciergeMarker) {
-          window.conciergeMarker = L.marker(ll).addTo(map)
-            .bindPopup("You are here").openPopup();
-        } else {
-          window.conciergeMarker.setLatLng(ll).openPopup();
-        }
-        fetch("{% url 'update_concierge_location' service_request.id %}", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": "{{ csrf_token }}"
-          },
-          body: JSON.stringify({ lat: ll[0], lng: ll[1] })
-        }).catch(console.error);
-      }, console.error, { enableHighAccuracy: true, maximumAge: 5000 });
     }
-    // b) Customer/Owner: poll concierge location
-    else if (share) {
-      let conciergeMarker = null;
-      const poll = () => {
-        fetch("{% url 'service_request_location' service_request.id %}")
-          .then(r => r.json())
-          .then(data => {
-            if (!data.lat || !data.lng) return;
-            const ll = [data.lat, data.lng];
-            if (!conciergeMarker) {
-              conciergeMarker = L.marker(ll).addTo(map)
-                .bindPopup("Your Concierge");
-            } else {
-              conciergeMarker.setLatLng(ll);
-            }
-          })
-          .catch(console.error);
-      };
-      poll();
-      setInterval(poll, 5000);
-    }
-  }
-});
-</script>
+  });
+  </script>
 {% endblock %}
