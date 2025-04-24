@@ -38,7 +38,7 @@ urlpatterns = [
     path('request/<int:request_id>/view/', views.view_service_request, name='view_service_request'),
     path('concierge/service/<int:request_id>/view/', views.view_service_request, name='concierge_view_service_request'),
     path('concierge/service/<int:request_id>/edit/', views.edit_service_request, name='edit_service_request'),
-    path('requests/<int:pk>/set_delivery/', views.set_request_pending, name='set_request_delivery'),
+    path('requests/<int:pk>/set_delivery/', views.set_request_delivery, name='set_request_delivery'),
 
 
     # Invoices
