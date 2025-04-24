@@ -45,7 +45,7 @@
           <td>{{ request.dropoff_location }}</td>
           <td>{{ request.status }}</td>
           <td>{{ request.assigned_to.get_full_name|default:"-" }}</td>
-          <td class="text-end">
+          <td class="text-end text-nowrap">
 	  <div class="btn-group btn-group-sm" role="group">
             <a href="{% url 'view_service_request' request.id %}" class="btn btn-primary btn-sm me-1">View</a>		  
             <a href="{% url 'edit_service_request' request.id %}" class="btn btn-primary btn-sm">Edit</a>
