@@ -215,6 +215,23 @@ def edit_car(request, car_id):
         form = CarForm(instance=car)
     return render(request, 'main/edit_car.html', {'form': form, 'car': car})
 
+
+# --------------------------
+# Account Info
+# --------------------------
+@login_required
+def account_info(request):
+    if request.method == 'POST':
+        form = AccountUpdateForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Account updated successfully.")
+            return redirect('account_info')
+    else:
+        form = AccountUpdateForm(instance=request.user)
+    return render(request, 'main/account.html', {'form': form})
+
+
 # --------------------------
 # Redirect After Login
 # --------------------------
