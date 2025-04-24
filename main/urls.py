@@ -23,7 +23,7 @@ urlpatterns = [
     path('dashboard/', views.customer_dashboard, name='customer_dashboard'),
     path('owner-dashboard/', views.owner_dashboard, name='owner_dashboard'),
     path('concierge-dashboard/', views.concierge_dashboard, name='concierge_dashboard'),
-    path('dealer_dashboard/', views.dealer_dashboard, name='dealer_dashboard'),
+    path('dealer-dashboard/', views.dealer_dashboard, name='dealer_dashboard'),
     path('redirect-after-login/', views.redirect_after_login, name='redirect_after_login'),
 
     # Cars
