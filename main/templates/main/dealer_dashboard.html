@@ -5,23 +5,11 @@
 {% block content %}
 <div class="container">
   <h2 class="text-center">Welcome, {{ user.first_name }}</h2>
-  <p class="text-center">You have {{ open_request_count }} open service request{{ open_request_count|pluralize }}.</p>
-  <p class="text-center">There are {{ open_request_count }} service request{{ open_request_count|pluralize }} matching your filter.</p>
+  <p class="text-center mb-4">Showing <strong>Delivery</strong> service requests only.</p>
 
   <div class="d-flex justify-content-center gap-3 mb-3">
     {% include 'main/_dashboard_buttons.html' %}
   </div>
-
-  <form method="get" class="mb-3">
-    <label for="status" class="form-label">Filter by Status:</label>
-    <select name="status" id="status" class="form-select w-auto d-inline-block" onchange="this.form.submit()">
-      <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
-      <option value="Pending" {% if status_filter == 'Pending' %}selected{% endif %}>Pending</option>
-      <option value="In service" {% if status_filter == 'In service' %}selected{% endif %}>In service</option>
-      <option value="Delivery" {% if status_filter == 'Delivery' %}selected{% endif %}>Delivery</option>
-      <option value="Complete" {% if status_filter == 'Complete' %}selected{% endif %}>Complete</option>
-    </select>
-  </form>
 
   <table class="table table-striped mt-4">
     <thead>
@@ -31,31 +19,38 @@
         <th>Year</th>
         <th>Pickup</th>
         <th>Dropoff</th>
-        <th>Status</th>
         <th>Actions</th>
       </tr>
     </thead>
     <tbody>
       {% for request in open_requests %}
-      <tr>
-        <td>{{ request.requested_at|date:"Y-m-d H:i" }}</td>
-        <td>{{ request.car.model }}</td>
-        <td>{{ request.car.year }}</td>
-        <td>{{ request.pickup_location }}</td>
-        <td>{{ request.dropoff_location }}</td>
-        <td>{{ request.status }}</td>
-        <td>
-          <a href="{% url 'view_service_request' request.id %}" class="btn btn-dark btn-sm">View</a>
-          <a href="{% url 'edit_service_request' request.id %}" class="btn btn-dark btn-sm">Edit</a>
-        </td>
-      </tr>
+        {% if request.status == 'Delivery' %}
+          <tr>
+            <td>{{ request.requested_at|date:"Y-m-d H:i" }}</td>
+            <td>{{ request.car.model }}</td>
+            <td>{{ request.car.year }}</td>
+            <td>{{ request.pickup_location }}</td>
+            <td>{{ request.dropoff_location }}</td>
+            <td class="text-end text-nowrap">
+              <div class="btn-group btn-group-sm" role="group">
+                <a href="{% url 'view_service_request' request.id %}"
+                   class="btn btn-dark btn-sm me-1">
+                  View
+                </a>
+                <a href="{% url 'edit_service_request' request.id %}"
+                   class="btn btn-dark btn-sm">
+                  Edit
+                </a>
+              </div>
+            </td>
+          </tr>
+        {% endif %}
       {% empty %}
-      <tr>
-        <td colspan="7">No open service requests.</td>
-      </tr>
+        <tr>
+          <td colspan="6" class="text-center">No delivery requests.</td>
+        </tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
 {% endblock %}
-
