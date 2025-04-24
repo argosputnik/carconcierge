@@ -46,8 +46,10 @@
           <td>{{ request.status }}</td>
           <td>{{ request.assigned_to.get_full_name|default:"-" }}</td>
           <td class="text-end">
-            <a href="{% url 'view_service_request' request.id %}" class="btn btn-primary btn-sm">View</a>		  
+	  <div class="btn-group btn-group-sm" role="group">
+            <a href="{% url 'view_service_request' request.id %}" class="btn btn-primary btn-sm me-1">View</a>		  
             <a href="{% url 'edit_service_request' request.id %}" class="btn btn-primary btn-sm">Edit</a>
+	  </div>
           </td>
         </tr>
       {% endfor %}
@@ -82,8 +84,10 @@
           </td>
           <td>{{ invoice.payment_status }}</td>
           <td>
-            <a href="{% url 'view_invoice' 1 invoice.id %}" class="btn btn-info btn-sm">View</a>
+	  <div class="btn-group btn-group-sm" role="group">
+            <a href="{% url 'view_invoice' 1 invoice.id %}" class="btn btn-info btn-sm me-1">View</a>
             <button type="button" class="btn btn-warning btn-sm" disabled>Pay</button>
+	  </div>
           </td>
         </tr>
       {% empty %}
