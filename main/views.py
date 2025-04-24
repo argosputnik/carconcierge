@@ -263,3 +263,18 @@ def redirect_after_login(request):
         return redirect('dealer_dashboard')
     else:
         return redirect('customer_dashboard')
+
+
+# Allow dealer to return to delivery once in service is finished.
+@require_POST
+def set_request_delivery(request, pk):
+    req = get_object_or_404(ServiceRequest, pk=pk, assigned_to=request.user)
+    req.status = 'Delivery'
+    req.assigned_to = None   # so the concierge can pick it up again
+    req.save()
+    return redirect('dealer_dashboard')
+
+
+# Make render health work on free tier. Delete if upgrade on render.com
+def health(request):
+    return HttpResponse("OK")
