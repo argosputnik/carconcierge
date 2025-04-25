@@ -16,7 +16,7 @@ html, body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  overflow: visible;
+  overflow: hidden;
 }
 
 main {
@@ -24,8 +24,9 @@ main {
   padding-top: 60px;
   text-align: center;
   min-height: 0;
-  overflow: visible;
+  overflow: auto;
 }
+
 
 /* -------------------- Header & Navigation -------------------- */
 header {
@@ -203,6 +204,14 @@ h2 {
     margin-top: 0;
   }
 }
+
+.table-responsive {
+  max-width: 100%;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  width: 100%;
+}
+
 
 /* -------------------- Footer -------------------- */
 footer {
