@@ -60,18 +60,8 @@ class CustomSignupForm(BootstrapFormMixin, UserCreationForm):
 # Service Request Form
 # --------------------------
 
-#Defined in models.py
-#JOB_TYPE_CHOICES = [
-#    ('Car Wash', 'Car Wash'),
-#    ('Oil Change', 'Oil Change'),
-#    ('Engine Light', 'Engine Light'),
-#    ('Brake Pad Replacement', 'Brake Pad Replacement'),
-#    ('Battery Replacement', 'Battery Replacement'),
-#    ('Other', 'Other'),
-#]
 
-
-class ServiceRequestForm(BootstrapFormMixin, forms.Form):
+"""class ServiceRequestForm(BootstrapFormMixin, forms.Form):
     model = forms.CharField(max_length=100, required=True)
     year = forms.ChoiceField(
         choices=[(y, y) for y in range(1990, datetime.datetime.now().year + 1)],
@@ -95,6 +85,27 @@ class ServiceRequestForm(BootstrapFormMixin, forms.Form):
         parts = [p.strip() for p in raw.split(',') if p.strip()]
         return "\n".join(parts)
 
+"""
+
+
+class ServiceRequestForm(BootstrapFormMixin, forms.Form):
+    pickup_location = forms.CharField(max_length=255, required=True)
+    dropoff_location = forms.CharField(max_length=255, required=True)
+    job_type = forms.ChoiceField(choices=JOB_TYPE_CHOICES, required=True)
+    description = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 3})
+    )
+
+    def __init__(self, *args, **kwargs):
+        kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+
+    def clean_pickup_location(self):
+        raw = self.cleaned_data['pickup_location']
+        # split on commas (or however), then re-join with \n
+        parts = [p.strip() for p in raw.split(',') if p.strip()]
+        return "\n".join(parts)
 
 
 # --------------------------

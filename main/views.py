@@ -175,13 +175,8 @@ def create_service_request(request):
 
         form = ServiceRequestForm(request.POST, user=request.user)
         if form.is_valid():
-            # pick existing car or create new defaults
+            # pick existing car
             car = get_object_or_404(Car, id=request.POST.get('car'), owner=request.user)
-            if not car.model:
-                car.model = form.cleaned_data['model']
-            if not car.year:
-                car.year = form.cleaned_data['year']
-            car.save()
 
             job_type = form.cleaned_data['job_type']
             description = form.cleaned_data['description'] if job_type == 'Other' else job_type
@@ -210,13 +205,7 @@ def create_service_request(request):
             messages.success(request, "Service request submitted.")
             return redirect('customer_dashboard')
     else:
-        try:
-            default_car = cars.get(license_plate__iexact=request.user.username)
-            initial = {'model': default_car.model, 'year': default_car.year}
-        except Car.DoesNotExist:
-            initial = {}
-
-        form = ServiceRequestForm(user=request.user, initial=initial)
+        form = ServiceRequestForm(user=request.user)
 
     return render(request, 'main/service_request_form.html', {
         'form': form,
@@ -224,6 +213,7 @@ def create_service_request(request):
         'locked_plate': cars.first().license_plate if is_locked else None,
         'missing_info': missing_info,
     })
+
 
 @login_required
 def view_service_request(request, request_id):
