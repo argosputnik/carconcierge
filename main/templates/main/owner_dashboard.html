@@ -1,141 +1,159 @@
 {% extends 'main/base.html' %}
 {% block title %}Owner Dashboard{% endblock %}
-{% block main_class %}with-padding{% endblock %}
+{% block main_class %}owner-dashboard{% endblock %}
 
 {% block content %}
-<div class="main-content">
-  <div class="scrollable-content">
-    <h2 class="text-center mb-4">Welcome, {{ user.first_name }}!</h2>
-
-    <div class="d-flex justify-content-center gap-3 mb-4">
-      {% include 'main/_dashboard_buttons.html' %}
+<div class="dashboard-container">
+    <!-- Header Section -->
+    <div class="dashboard-header">
+        <h2>Welcome, {{ user.first_name }}!</h2>
+        <div class="dashboard-controls">
+            {% include 'main/_dashboard_buttons.html' %}
+        </div>
     </div>
 
-    <!-- Activity Table -->
-    <div class="table-container">
-      <h3 class="mb-3">Recent Activity</h3>
-      <div class="table-responsive">
-        <table class="table table-striped">
-          <thead class="table-dark">
-            <tr>
-              <th>Request Date</th>
-              <th>Customer</th>
-              <th>Status</th>
-              <th>Assigned To</th>
-              <th>Description</th>
-              <th class="text-end">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for request in service_requests %}
-            <tr>
-              <td>{{ request.requested_at|date:"Y-m-d H:i" }}</td>
-              <td>{{ request.customer.first_name }} {{ request.customer.last_name }}</td>
-              <td>
-                <form method="post" action="{% url 'edit_service_request' request.id %}" class="status-form">
-                  {% csrf_token %}
-                  <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
-                    <option value="Pending" {% if request.status == "Pending" %}selected{% endif %}>Pending</option>
-                    <option value="In service" {% if request.status == "In service" %}selected{% endif %}>In service</option>
-                    <option value="Delivery" {% if request.status == "Delivery" %}selected{% endif %}>Delivery</option>
-                    <option value="Complete" {% if request.status == "Complete" %}selected{% endif %}>Complete</option>
-                    <option value="Waiting for Payment" {% if request.status == "Waiting for Payment" %}selected{% endif %}>Waiting for Payment</option>
-                  </select>
-                  <input type="hidden" name="update_status_only" value="true">
-                </form>
-              </td>
-              <td>{{ request.assigned_to }}</td>
-              <td class="text-truncate" style="max-width: 200px;">{{ request.description }}</td>
-              <td class="text-end">
-                <div class="action-buttons">
-                  <a href="{% url 'view_service_request' request.id %}" class="btn btn-sm btn-outline-primary">View</a>
-                  <a href="{% url 'edit_service_request' request.id %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+    <!-- Service Requests Section -->
+    <section class="dashboard-section">
+        <h3><i class="bi bi-list-task"></i> Recent Service Requests</h3>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Customer</th>
+                        <th>Status</th>
+                        <th>Assigned To</th>
+                        <th>Description</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for request in service_requests|slice:":50" %}
+                    <tr>
+                        <td>{{ request.requested_at|date:"M d, Y H:i" }}</td>
+                        <td>{{ request.customer.first_name }} {{ request.customer.last_name }}</td>
+                        <td>
+                            <span class="badge bg-{{ request.status|status_badge_color }}">
+                                {{ request.status }}
+                            </span>
+                        </td>
+                        <td>{{ request.assigned_to|default:"-" }}</td>
+                        <td class="text-truncate" style="max-width: 200px;">{{ request.description }}</td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'view_service_request' request.id %}" 
+                                   class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'edit_service_request' request.id %}" 
+                                   class="btn btn-outline-secondary btn-sm">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            No service requests found
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if service_requests.count > 50 %}
+        <div class="text-end mt-2">
+            <a href="{% url 'all_service_requests' %}" class="btn btn-sm btn-outline-primary">
+                View All Requests ({{ service_requests.count }})
+            </a>
+        </div>
+        {% endif %}
+    </section>
+
+    <!-- Invoices Section -->
+    <div class="row mt-4">
+        <!-- Invoice Type 1 -->
+        <div class="col-md-6">
+            <section class="dashboard-section">
+                <h3><i class="bi bi-receipt"></i> Type 1 Invoices</h3>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Date</th>
+                                <th>Customer</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for invoice in invoices1|slice:":25" %}
+                            <tr>
+                                <td>{{ invoice.id }}</td>
+                                <td>{{ invoice.invoice_date|date:"M d, Y" }}</td>
+                                <td>{{ invoice.first_name }} {{ invoice.last_name }}</td>
+                                <td>{{ invoice.price }} {{ invoice.currency }}</td>
+                                <td>
+                                    <span class="badge bg-{% if invoice.payment_status == 'Paid' %}success{% else %}warning{% endif %}">
+                                        {{ invoice.payment_status }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-3">
+                                    No Type 1 invoices found
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
-              </td>
-            </tr>
-            {% empty %}
-            <tr>
-              <td colspan="6" class="text-center py-4">
-                <div class="empty-state">
-                  <i class="bi bi-inbox fs-1 text-muted"></i>
-                  <p class="mt-2 mb-0">No service requests found</p>
+            </section>
+        </div>
+
+        <!-- Invoice Type 2 -->
+        <div class="col-md-6">
+            <section class="dashboard-section">
+                <h3><i class="bi bi-receipt-cutoff"></i> Type 2 Invoices</h3>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Date</th>
+                                <th>Customer</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for invoice in invoices2|slice:":25" %}
+                            <tr>
+                                <td>{{ invoice.id }}</td>
+                                <td>{{ invoice.invoice_date|date:"M d, Y" }}</td>
+                                <td>{{ invoice.first_name }} {{ invoice.last_name }}</td>
+                                <td>{{ invoice.price }} {{ invoice.currency }}</td>
+                                <td>
+                                    <span class="badge bg-{% if invoice.payment_status == 'Paid' %}success{% else %}warning{% endif %}">
+                                        {{ invoice.payment_status }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-3">
+                                    No Type 2 invoices found
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+            </section>
+        </div>
     </div>
-
-    <!-- Invoices Table -->
-    <div class="table-container mt-5">
-      <h3 class="mb-3">Invoices</h3>
-      <div class="table-responsive">
-        <table class="table table-striped align-middle">
-          <thead class="table-dark">
-            <tr>
-              <th>ID</th>
-              <th>Date</th>
-              <th>Customer</th>
-              <th>Price</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for invoice in invoices1 %}
-            <tr>
-              <form method="post" action="{% url 'edit_invoice' invoice.id %}">
-                {% csrf_token %}
-                <td>{{ invoice.id }}</td>
-                <td>{{ invoice.invoice_date|date:"Y-m-d H:i" }}</td>
-                <td>{{ invoice.first_name }} {{ invoice.last_name }}</td>
-                <td>
-                  <div class="price-input-group">
-                    <input type="text" name="price" value="{{ invoice.price }}" class="form-control form-control-sm" placeholder="0.00">
-                    <select name="currency" class="form-select form-select-sm">
-                      <option value="GEL" {% if invoice.currency == "GEL" %}selected{% endif %}>GEL</option>
-                      <option value="USD" {% if invoice.currency == "USD" %}selected{% endif %}>USD</option>
-                      <option value="EUR" {% if invoice.currency == "EUR" %}selected{% endif %}>EUR</option>
-                    </select>
-                  </div>
-                </td>
-                <td>
-                  <select name="payment_status" class="form-select form-select-sm">
-                    <option value="Unpaid" {% if invoice.payment_status == "Unpaid" %}selected{% endif %}>Unpaid</option>
-                    <option value="Paid" {% if invoice.payment_status == "Paid" %}selected{% endif %}>Paid</option>
-                  </select>
-                </td>
-                <td>
-                  <div class="action-buttons">
-                    <a href="{% url 'view_invoice' 1 invoice.id %}" class="btn btn-sm btn-outline-info">View</a>
-                    <button type="submit" class="btn btn-sm btn-outline-success">Update</button>
-                  </div>
-                </td>
-              </form>
-            </tr>
-            {% endfor %}
-
-            {% for invoice in invoices2 %}
-            <tr>
-              <form method="post" action="{% url 'edit_invoice' invoice.id %}">
-                {% csrf_token %}
-                <td>{{ invoice.id }}</td>
-                <td>{{ invoice.invoice_date|date:"Y-m-d H:i" }}</td>
-                <td>{{ invoice.first_name }} {{ invoice.last_name }}</td>
-                <td>
-                  <div class="price-input-group">
-                    <input type="text" name="price" value="{{ invoice.price }}" class="form-control form-control-sm" placeholder="0.00">
-                    <select name="currency" class="form-select form-select-sm">
-                      <option value="GEL" {% if invoice.currency == "GEL" %}selected{% endif %}>GEL</option>
-                      <option value="USD" {% if invoice.currency == "USD" %}selected{% endif %}>USD</option>
-                      <option value="EUR" {% if invoice.currency == "EUR" %}selected{% endif %}>EUR</option>
-                    </select>
-                  </div>
-                </td>
-                <td>
-                  <select name="payment_status" class="form-select form-select-sm">
-                    <option value="Unpaid" {% if invoice.payment_status == "Unpaid" %}selected{% endif %}>Un
-::contentReference[oaicite:0]{index=0}
- 
+</div>
+{% endblock %}
