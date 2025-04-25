@@ -69,12 +69,23 @@ TEMPLATES = [
 WSGI_APPLICATION = "cars.wsgi.application"
 
 # Database
+#DATABASES = {
+#    "default": dj_database_url.config(
+#        default="postgresql://cars_user:yourpassword@localhost:5432/cars_db",
+#        conn_max_age=600,
+#    )
+#}
+
+
+# Database
 DATABASES = {
     "default": dj_database_url.config(
-        default="postgresql://cars_user:yourpassword@localhost:5432/cars_db",
+        default="postgresql://cars_db_fr93_user:k3Tg8Dh7yUyzscZcYNDPGXP5KIgpPPdI@localhost:5432/cars_db_fr93",
         conn_max_age=600,
     )
 }
+
+
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
