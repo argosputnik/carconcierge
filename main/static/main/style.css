@@ -1,55 +1,64 @@
-/* -------------------- Reset -------------------- */
+/* -------------------- Reset & Base Styles -------------------- */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-/* -------------------- Layout -------------------- */
+:root {
+  --primary-color: #e94e77;
+  --dark-bg: #333;
+  --dark-bg-hover: #444;
+  --text-light: #fff;
+  --text-dark: #212529;
+  --border-color: #dee2e6;
+  --focus-color: #86b7fe;
+  --focus-shadow: rgba(13, 110, 253, 0.25);
+}
+
 html, body {
   height: 100%;
   margin: 0;
   padding: 0;
   font-family: 'Helvetica Neue', Arial, sans-serif;
-  overflow: hidden;
+  line-height: 1.6;
 }
 
+/* -------------------- Layout Structure -------------------- */
 .page-wrapper {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
 }
 
 main {
-  flex: 1 1 auto;
+  flex: 1;
   padding-top: 60px;
   overflow-y: auto;
-  text-align: center;
   min-height: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: auto;
+  position: relative;
 }
 
-.main-content {
-  flex: 1;
+.scrollable-content {
+  height: 100%;
+  overflow-y: auto;
   padding: 20px;
 }
 
+.main-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
 
 /* -------------------- Header & Navigation -------------------- */
 header {
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.9);
   position: fixed;
   width: 100%;
   top: 0;
   z-index: 1000;
-}
-
-
-h2 {
-  padding-bottom: 1em;
+  backdrop-filter: blur(5px);
 }
 
 .navbar {
@@ -59,24 +68,83 @@ h2 {
   padding: 15px 20px;
 }
 
-/* Hamburger Button */
+/* Navigation Links */
+.nav-list {
+  list-style: none;
+  display: flex;
+  gap: 20px;
+}
+
+.nav-list a,
+.nav-list .dropbtn {
+  color: var(--text-light);
+  text-decoration: none;
+  font-size: 16px;
+  padding: 15px 0;
+  display: block;
+  transition: color 0.3s ease;
+}
+
+.nav-list a:hover,
+.nav-list .dropbtn:hover {
+  color: var(--primary-color);
+}
+
+/* Dropdown Menus */
+.dropdown-content {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: var(--dark-bg);
+  min-width: 160px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1001;
+}
+
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
+.dropdown-content a {
+  color: var(--text-light);
+  padding: 12px 16px;
+  display: block;
+}
+
+.dropdown-content a:hover {
+  background: var(--dark-bg-hover);
+}
+
+/* Submenu Styles */
+.dropdown-submenu .dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 100%;
+  background-color: var(--dark-bg);
+}
+
+.dropdown-submenu:hover .dropdown-menu {
+  display: block;
+}
+
+/* Mobile Navigation */
 .nav-toggle {
   display: none;
-  flex-direction: column;
-  justify-content: center;
   background: none;
   border: none;
   cursor: pointer;
   z-index: 1002;
   position: absolute;
   right: 20px;
-  top: 10px;
+  top: 15px;
 }
 
 .hamburger-bar {
   width: 25px;
   height: 3px;
-  background-color: #fff;
+  background-color: var(--text-light);
   margin: 4px 0;
   transition: transform 0.3s ease, opacity 0.3s ease;
 }
@@ -91,98 +159,202 @@ h2 {
   transform: translateY(-7px) rotate(-45deg);
 }
 
-/* Desktop Navigation */
-.nav-list {
-  list-style: none;
+/* -------------------- Table Styles -------------------- */
+.table-container {
+  margin-bottom: 3rem;
+}
+
+.table-responsive {
+  width: 100%;
+  margin-bottom: 2rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.table-dark {
+  background-color: var(--dark-bg);
+  color: var(--text-light);
+}
+
+th, td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* -------------------- Form Elements -------------------- */
+.form-control {
+  background-color: #fff !important;
+  color: var(--text-dark) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 1rem;
+  box-shadow: none !important;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control:focus {
+  border-color: var(--focus-color) !important;
+  box-shadow: 0 0 0 0.2rem var(--focus-shadow) !important;
+  outline: none !important;
+}
+
+.form-select-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+.price-input-group {
   display: flex;
-  gap: 20px;
+  gap: 10px;
 }
 
-.nav-list li {
-  position: relative;
+.status-form {
+  min-width: 150px;
 }
 
-.nav-list a,
-.nav-list .dropbtn {
+/* -------------------- Button Styles -------------------- */
+.btn {
+  display: inline-block;
+  font-weight: 400;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  user-select: none;
+  border: 1px solid transparent;
+  padding: 0.375rem 0.75rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  border-radius: 0.25rem;
+  transition: all 0.15s ease-in-out;
+}
+
+.btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+.btn-outline {
+  background-color: transparent;
+  border-color: currentColor;
+}
+
+.btn-primary {
   color: #fff;
-  text-decoration: none;
-  font-size: 16px;
-  padding: 15px 0;
-  display: block;
-  transition: color 0.3s ease;
+  background-color: #007bff;
+  border-color: #007bff;
 }
 
-.nav-list a:hover,
-.nav-list .dropbtn:hover {
-  color: #e94e77;
-}
-
-/* Dropdown Menu */
-.dropdown-content {
-  display: none;
-  position: absolute;
-  top: 100%;
-  left: 0;
-  background: #333;
-  min-width: 160px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  z-index: 1001;
-}
-
-.dropdown-content a,
-.dropdown-content .logout-link {
+.btn-secondary {
   color: #fff;
-  padding: 12px 16px;
-  text-decoration: none;
+  background-color: #6c757d;
+  border-color: #6c757d;
+}
+
+.btn-success {
+  color: #fff;
+  background-color: #28a745;
+  border-color: #28a745;
+}
+
+.btn-info {
+  color: #fff;
+  background-color: #17a2b8;
+  border-color: #17a2b8;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* -------------------- Dashboard Components -------------------- */
+.dashboard-btn-group {
+  display: flex;
+  gap: 10px;
+}
+
+.dashboard-buttons-fixed {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: center;
+  overflow-x: auto;
+  width: 100%;
+  padding: 0 10px;
+}
+
+.dashboard-buttons-fixed > * {
+  flex: 1 1 33%;
+  min-width: 0;
+  white-space: nowrap;
+  text-align: center;
+}
+
+/* -------------------- Footer -------------------- */
+footer {
+  flex-shrink: 0;
+  background: var(--dark-bg);
+  color: var(--text-light);
+  text-align: center;
+  padding: 20px;
+  margin-top: auto;
+}
+
+/* -------------------- Utility Classes -------------------- */
+.text-center {
+  text-align: center;
+}
+
+.text-end {
+  text-align: right;
+}
+
+.mb-3 {
+  margin-bottom: 1rem;
+}
+
+.mb-4 {
+  margin-bottom: 1.5rem;
+}
+
+.mt-4 {
+  margin-top: 1.5rem;
+}
+
+.mt-5 {
+  margin-top: 3rem;
+}
+
+.py-4 {
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+}
+
+.empty-state {
+  color: #6c757d;
+}
+
+.empty-state i {
   display: block;
-  font-size: 16px;
+  margin-bottom: 0.5rem;
 }
 
-.dropdown-content a:hover,
-.dropdown-content .logout-link:hover {
-  background: #444;
-}
-
-.dropdown:hover .dropdown-content {
-  display: block;
-}
-
-/* -------------------- Submenu Dropdown Support -------------------- */
-.dropdown-submenu {
-  position: relative;
-}
-
-.dropdown-submenu .dropdown-menu {
-  display: none;
-  position: absolute;
-  top: 0;
-  left: 100%;
-  background-color: #333;  /* Match main dropdown */
-  border: none;
-  min-width: 160px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.dropdown-submenu:hover .dropdown-menu {
-  display: block;
-}
-
-/* Submenu Items */
-.dropdown-submenu .dropdown-item {
-  color: #fff !important;
-  padding: 12px 16px;
-  text-decoration: none;
-  display: block;
-  font-size: 16px;
-  background-color: #333; /* solid background for submenu items */
-}
-
-.dropdown-submenu .dropdown-item:hover {
-  color: #fff !important;
-  background-color: #444; /* hover effect */
-}
-
-/* -------------------- Responsive Navigation -------------------- */
+/* -------------------- Responsive Styles -------------------- */
 @media (max-width: 768px) {
   .nav-toggle {
     display: flex;
@@ -197,137 +369,35 @@ h2 {
     background: rgba(0, 0, 0, 0.95);
     padding: 20px;
     display: none;
-    z-index: 1001;
   }
 
   .nav-list.active {
     display: flex;
   }
 
-  .nav-list li {
-    margin-bottom: 10px;
+  .main-content {
+    padding: 15px;
   }
 
-  .dropdown-submenu .dropdown-menu {
-    left: 100%;
-    top: 0;
-    margin-top: 0;
+  .price-input-group,
+  .action-buttons {
+    flex-direction: column;
+    gap: 5px;
   }
 
-/* Table container adjustments */
-.table-container {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.table-responsive {
-  flex: 1;
-  min-height: 0;
-  max-width: 100%;
-  margin-bottom: 20px;
-  overflow: auto;
-  width: 100%;
-}
-
-
-/* -------------------- Footer -------------------- */
-footer {
-  flex-shrink: 0;
-  background: #333;
-  color: #fff;
-  text-align: center;
-  padding: 20px;
-  margin-top: auto;
-}
-
-/* -------------------- Form Styling -------------------- */
-input.form-control,
-textarea.form-control,
-select.form-control {
-  background-color: #ffffff !important;
-  color: #212529 !important;
-  border: 1px solid #000 !important;
-  border-radius: 0.375rem;
-  padding: 0.375rem 0.75rem;
-  font-size: 1rem;
-  box-shadow: none !important;
-}
-
-input.form-control:focus,
-textarea.form-control:focus,
-select.form-control:focus {
-  border-color: #86b7fe !important;
-  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25) !important;
-  outline: none !important;
-}
-
-/* -------------------- Hero Section -------------------- */
-.hero-content {
-  padding-top: 30px;
-}
-
-
-.dashboard-btn-group,
-.dashboard-btn {
-  min-width: 110px;
-  max-width: 100%;
-  flex: 1 1 auto;
-  text-align: center;
-}
-
-
-/* Force the container to always use a single flex row */
-.dashboard-buttons-fixed {
-  display: flex !important;
-  flex-direction: row !important;
-  flex-wrap: nowrap !important;  /* No wrapping */
-  justify-content: space-between !important;
-  align-items: center !important;
-  overflow-x: auto !important;   /* Allow horizontal scroll if needed */
-  width: 100% !important;
-  padding: 0 10px !important;
-  box-sizing: border-box;
-}
-
-/* Force each direct child (buttons and button groups) to share equal, shrinkable space */
-.dashboard-buttons-fixed > * {
-  flex: 1 1 33% !important;   /* Each takes about one-third of available width */
-  min-width: 0 !important;     /* Let them shrink arbitrarily */
-  white-space: nowrap !important;  /* Prevent text wrap */
-  text-align: center !important;
-}
-
-/* For very narrow screens, reduce padding and font size if needed */
-@media (max-width: 480px) {
   .dashboard-buttons-fixed > * {
-    font-size: 10px !important;
-    padding: 4px 6px !important;
+    font-size: 0.8rem;
+    padding: 4px 6px;
   }
 }
 
-
-/* ─── Horizontal form layout ───────────────────────────────────────── */
-.form-group {
-  display: flex;
-  align-items: center;
-  margin-bottom: 1rem;
+@media (max-width: 480px) {
+  .table-responsive {
+    margin-bottom: 1rem;
+  }
+  
+  th, td {
+    padding: 8px 10px;
+    font-size: 0.9rem;
+  }
 }
-
-/* make all labels the same fixed width & right-align them */
-.form-group label {
-  flex: 0 0 160px;    /* adjust to whatever width you need */
-  margin-right: 0.5rem;
-  text-align: right;
-}
-
-/* let your inputs/selects/textareas fill the rest of the space */
-.form-group .form-control,
-.form-group input,
-.form-group select,
-.form-group textarea {
-  flex: 1 1 auto;
-  margin: 0;          /* remove any default margins that would break the flex */
-}
-

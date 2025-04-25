@@ -1,0 +1,169 @@
+{% extends 'main/base.html' %}
+{% block title %}Owner Dashboard{% endblock %}
+{% block main_class %}with-padding{% endblock %}
+
+{% block content %}
+<div class="main-content">
+  <div class="scrollable-content">
+    <h2 class="text-center mb-4">Welcome, {{ user.first_name }}!</h2>
+
+    <div class="d-flex justify-content-center gap-3 mb-4">
+      {% include 'main/_dashboard_buttons.html' %}
+    </div>
+
+    <!-- Activity Table -->
+    <div class="table-container">
+      <h3 class="mb-3">Recent Activity</h3>
+      <div class="table-responsive">
+        <table class="table table-striped">
+          <thead class="table-dark">
+            <tr>
+              <th>Request Date</th>
+              <th>Customer</th>
+              <th>Status</th>
+              <th>Assigned To</th>
+              <th>Description</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for request in service_requests %}
+            <tr>
+              <td>{{ request.requested_at|date:"Y-m-d H:i" }}</td>
+              <td>{{ request.customer.first_name }} {{ request.customer.last_name }}</td>
+              <td>
+                <form method="post" action="{% url 'edit_service_request' request.id %}" class="status-form">
+                  {% csrf_token %}
+                  <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="Pending" {% if request.status == "Pending" %}selected{% endif %}>Pending</option>
+                    <option value="In service" {% if request.status == "In service" %}selected{% endif %}>In service</option>
+                    <option value="Delivery" {% if request.status == "Delivery" %}selected{% endif %}>Delivery</option>
+                    <option value="Complete" {% if request.status == "Complete" %}selected{% endif %}>Complete</option>
+                    <option value="Waiting for Payment" {% if request.status == "Waiting for Payment" %}selected{% endif %}>Waiting for Payment</option>
+                  </select>
+                  <input type="hidden" name="update_status_only" value="true">
+                </form>
+              </td>
+              <td>{{ request.assigned_to }}</td>
+              <td class="text-truncate" style="max-width: 200px;">{{ request.description }}</td>
+              <td class="text-end">
+                <div class="action-buttons">
+                  <a href="{% url 'view_service_request' request.id %}" class="btn btn-sm btn-outline-primary">View</a>
+                  <a href="{% url 'edit_service_request' request.id %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="6" class="text-center py-4">
+                <div class="empty-state">
+                  <i class="bi bi-inbox fs-1 text-muted"></i>
+                  <p class="mt-2 mb-0">No service requests found</p>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Invoices Table -->
+    <div class="table-container mt-5">
+      <h3 class="mb-3">Invoices</h3>
+      <div class="table-responsive">
+        <table class="table table-striped align-middle">
+          <thead class="table-dark">
+            <tr>
+              <th>ID</th>
+              <th>Date</th>
+              <th>Customer</th>
+              <th>Price</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for invoice in invoices1 %}
+            <tr>
+              <form method="post" action="{% url 'edit_invoice' invoice.id %}">
+                {% csrf_token %}
+                <td>{{ invoice.id }}</td>
+                <td>{{ invoice.invoice_date|date:"Y-m-d H:i" }}</td>
+                <td>{{ invoice.first_name }} {{ invoice.last_name }}</td>
+                <td>
+                  <div class="price-input-group">
+                    <input type="text" name="price" value="{{ invoice.price }}" class="form-control form-control-sm" placeholder="0.00">
+                    <select name="currency" class="form-select form-select-sm">
+                      <option value="GEL" {% if invoice.currency == "GEL" %}selected{% endif %}>GEL</option>
+                      <option value="USD" {% if invoice.currency == "USD" %}selected{% endif %}>USD</option>
+                      <option value="EUR" {% if invoice.currency == "EUR" %}selected{% endif %}>EUR</option>
+                    </select>
+                  </div>
+                </td>
+                <td>
+                  <select name="payment_status" class="form-select form-select-sm">
+                    <option value="Unpaid" {% if invoice.payment_status == "Unpaid" %}selected{% endif %}>Unpaid</option>
+                    <option value="Paid" {% if invoice.payment_status == "Paid" %}selected{% endif %}>Paid</option>
+                  </select>
+                </td>
+                <td>
+                  <div class="action-buttons">
+                    <a href="{% url 'view_invoice' 1 invoice.id %}" class="btn btn-sm btn-outline-info">View</a>
+                    <button type="submit" class="btn btn-sm btn-outline-success">Update</button>
+                  </div>
+                </td>
+              </form>
+            </tr>
+            {% endfor %}
+
+            {% for invoice in invoices2 %}
+            <tr>
+              <form method="post" action="{% url 'edit_invoice' invoice.id %}">
+                {% csrf_token %}
+                <td>{{ invoice.id }}</td>
+                <td>{{ invoice.invoice_date|date:"Y-m-d H:i" }}</td>
+                <td>{{ invoice.first_name }} {{ invoice.last_name }}</td>
+                <td>
+                  <div class="price-input-group">
+                    <input type="text" name="price" value="{{ invoice.price }}" class="form-control form-control-sm" placeholder="0.00">
+                    <select name="currency" class="form-select form-control-sm">
+                      <option value="GEL" {% if invoice.currency == "GEL" %}selected{% endif %}>GEL</option>
+                      <option value="USD" {% if invoice.currency == "USD" %}selected{% endif %}>USD</option>
+                      <option value="EUR" {% if invoice.currency == "EUR" %}selected{% endif %}>EUR</option>
+                    </select>
+                  </div>
+                </td>
+                <td>
+                  <select name="payment_status" class="form-select form-select-sm">
+                    <option value="Unpaid" {% if invoice.payment_status == "Unpaid" %}selected{% endif %}>Unpaid</option>
+                    <option value="Paid" {% if invoice.payment_status == "Paid" %}selected{% endif %}>Paid</option>
+                  </select>
+                </td>
+                <td>
+                  <div class="action-buttons">
+                    <a href="{% url 'view_invoice' 2 invoice.id %}" class="btn btn-sm btn-outline-info">View</a>
+                    <button type="submit" class="btn btn-sm btn-outline-success">Update</button>
+                  </div>
+                </td>
+              </form>
+            </tr>
+            {% endfor %}
+
+            {% if not invoices1 and not invoices2 %}
+            <tr>
+              <td colspan="6" class="text-center py-4">
+                <div class="empty-state">
+                  <i class="bi bi-receipt fs-1 text-muted"></i>
+                  <p class="mt-2 mb-0">No invoices found</p>
+                </div>
+              </td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
