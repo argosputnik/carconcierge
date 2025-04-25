@@ -40,7 +40,7 @@ main {
 }
 
 .scrollable-content {
-  height: 100%;
+  height: calc(100vh - 60px - 60px); 
   overflow-y: auto;
   padding: 20px;
 }
