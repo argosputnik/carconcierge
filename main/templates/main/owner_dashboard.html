@@ -18,11 +18,31 @@
         <table class="table table-striped">
           <thead class="table-dark">
             <tr>
-              <th>Request Date</th>
-              <th>Customer</th>
-              <th>Status</th>
-              <th>Assigned To</th>
-              <th>Description</th>
+              <th>
+            <a href="?sort=requested_at&dir={% if current_sort == 'requested_at' and current_dir == 'desc' %}asc{% else %}desc{% endif %}" class="text-white text-decoration-none">
+              Request Date
+              {% if current_sort == 'requested_at' %}
+                <i class="bi bi-chevron-{% if current_dir == 'desc' %}down{% else %}up{% endif %}"></i>
+              {% endif %}
+            </a>
+          </th>
+              <a href="?sort=customer__last_name&dir={% if current_sort == 'customer__last_name' and current_dir == 'desc' %}asc{% else %}desc{% endif %}" class="text-white text-decoration-none">
+              Customer
+              {% if current_sort == 'customer__last_name' %}
+                <i class="bi bi-chevron-{% if current_dir == 'desc' %}down{% else %}up{% endif %}"></i>
+              {% endif %}
+            </a>
+          </th>
+	      <th>Status</th>
+              <th>
+            <a href="?sort=assigned_to&dir={% if current_sort == 'assigned_to' and current_dir == 'desc' %}asc{% else %}desc{% endif %}" class="text-white text-decoration-none">
+              Assigned To
+              {% if current_sort == 'assigned_to' %}
+                <i class="bi bi-chevron-{% if current_dir == 'desc' %}down{% else %}up{% endif %}"></i>
+              {% endif %}
+            </a>
+          </th>
+	   <th>Description</th>
               <th class="text-end">Actions</th>
             </tr>
           </thead>
@@ -75,10 +95,31 @@
         <table class="table table-striped align-middle">
           <thead class="table-dark">
             <tr>
-              <th>ID</th>
-              <th>Date</th>
-              <th>Customer</th>
-              <th>Price</th>
+              <th>
+            <a href="?sort=id&dir={% if current_sort == 'id' and current_dir == 'desc' %}asc{% else %}desc{% endif %}" class="text-white text-decoration-none">
+              ID
+              {% if current_sort == 'id' %}
+                <i class="bi bi-chevron-{% if current_dir == 'desc' %}down{% else %}up{% endif %}"></i>
+              {% endif %}
+            </a>
+          </th>
+              <th>
+            <a href="?sort=invoice_date&dir={% if current_sort == 'invoice_date' and current_dir == 'desc' %}asc{% else %}desc{% endif %}" class="text-white text-decoration-none">
+              Date
+              {% if current_sort == 'invoice_date' %}
+                <i class="bi bi-chevron-{% if current_dir == 'desc' %}down{% else %}up{% endif %}"></i>
+              {% endif %}
+            </a>
+          </th>
+              <th>
+            <a href="?sort=last_name&dir={% if current_sort == 'last_name' and current_dir == 'desc' %}asc{% else %}desc{% endif %}" class="text-white text-decoration-none">
+              Customer
+              {% if current_sort == 'last_name' %}
+                <i class="bi bi-chevron-{% if current_dir == 'desc' %}down{% else %}up{% endif %}"></i>
+              {% endif %}
+            </a>
+          </th>
+	      <th>Price</th>
               <th>Status</th>
               <th>Actions</th>
             </tr>

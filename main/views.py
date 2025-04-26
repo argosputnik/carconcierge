@@ -7,6 +7,7 @@ from django.views.decorators.http import require_POST
 from django.http import HttpResponse, HttpResponseForbidden, Http404, JsonResponse
 from django.contrib import messages
 from django.utils import timezone
+from django.db.models import F, Case, When, Value, CharField
 
 from .models import (
     Car,
@@ -146,14 +147,45 @@ def dealer_dashboard(request):
 
 @login_required
 def owner_dashboard(request):
-    service_requests = ServiceRequest.objects.all().order_by('-requested_at')
+    # Get sort parameters from request
+    sort_field = request.GET.get('sort', 'requested_at')
+    sort_direction = request.GET.get('dir', 'desc')
+    
+    # Define valid sort fields to prevent SQL injection
+    valid_sort_fields = {
+        'requested_at': 'requested_at',
+        'customer': 'customer__first_name',
+        'status': 'status',
+        'assigned_to': 'assigned_to__first_name',
+        'description': 'description'
+    }
+    
+    # Use the sort field if it's valid, otherwise default to requested_at
+    sort_field = valid_sort_fields.get(sort_field, 'requested_at')
+    
+    # Apply the sort direction
+    if sort_direction == 'asc':
+        sort_field = sort_field
+    else:  # default to desc
+        sort_field = f'-{sort_field}'
+    
+    # Apply sorting to service requests
+    service_requests = ServiceRequest.objects.all().order_by(sort_field)
+    
+    # Get invoices with default sorting
     invoices1 = Invoice1.objects.all().order_by('-invoice_date')
     invoices2 = Invoice2.objects.all()
-    return render(request, 'main/owner_dashboard.html', {
+    
+    # Pass sort parameters to template for generating sort links
+    context = {
         'service_requests': service_requests,
         'invoices1': invoices1,
         'invoices2': invoices2,
-    })
+        'current_sort': sort_field.lstrip('-'),  # Remove the minus sign if present
+        'current_direction': sort_direction,
+    }
+    
+    return render(request, 'main/owner_dashboard.html', context)
 
 
 # --------------------------
@@ -622,3 +654,4 @@ def service_request_location(request, request_id):
         'lat': sr.concierge_latitude,
         'lng': sr.concierge_longitude,
     })
+

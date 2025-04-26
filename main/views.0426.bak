@@ -1,14 +1,13 @@
+import json
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, get_user_model
 from django.contrib.auth.models import Group
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.contrib import messages
-from django.http import HttpResponseForbidden, Http404, JsonResponse
-from django.utils import timezone
 from django.views.decorators.http import require_POST
+from django.http import HttpResponse, HttpResponseForbidden, Http404, JsonResponse
+from django.contrib import messages
+from django.utils import timezone
 
-
-# Import your models here
 from .models import (
     Car,
     ServiceRequest,
@@ -16,8 +15,7 @@ from .models import (
     Invoice2,
     Dealer,
     Inventory,
-)  
-
+)
 from .forms import (
     CustomSignupForm,
     ServiceRequestForm,
@@ -31,25 +29,12 @@ from .forms import (
     EditDealerForm,
     EditConciergeForm,
     AddInventoryForm,
-    EditInventoryForm        
+    EditInventoryForm,
+    Invoice1Form,
+    Invoice2Form,
 )
 
 User = get_user_model()
-
-# --------------------
-# View concierge list
-# --------------------
-@login_required
-def view_concierges(request):
-    concierges = User.objects.filter(role='concierge')
-    return render(request, 'main/view_concierges.html', {'concierges': concierges})
-
-
-# --------------------------
-# Home View
-# --------------------------
-def home(request):
-    return render(request, 'main/home.html')
 
 # --------------------------
 # Role Checks
@@ -60,15 +45,27 @@ def is_concierge(user):
 def is_dealer(user):
     return user.is_authenticated and user.role == 'dealer'
 
-# --------------------------
-# Signup View
-# --------------------------
 
+# --------------------------
+# Home & Health
+# --------------------------
+def home(request):
+    return render(request, 'main/home.html')
+
+def health(request):
+    return HttpResponse("OK")
+
+
+# --------------------------
+# Signup, Account & Redirect
+# --------------------------
 def signup_view(request):
     if request.method == 'POST':
         form = CustomSignupForm(request.POST)
         if form.is_valid():
-            user = form.save()  
+            user = form.save(commit=False)
+            user.role = 'customer'
+            user.save()
             Group.objects.get_or_create(name='Customer')[0].user_set.add(user)
             login(request, user)
             return redirect('customer_dashboard')
@@ -76,10 +73,6 @@ def signup_view(request):
         form = CustomSignupForm()
     return render(request, 'main/signup.html', {'form': form})
 
-
-# --------------------------
-# Account Info
-# --------------------------
 @login_required
 def account_info(request):
     if request.method == 'POST':
@@ -92,19 +85,17 @@ def account_info(request):
         form = AccountUpdateForm(instance=request.user)
     return render(request, 'main/account.html', {'form': form})
 
-# --------------------------
-# Redirect After Login
-# --------------------------
 @login_required
 def redirect_after_login(request):
     role = request.user.role
     if role == 'owner':
         return redirect('owner_dashboard')
-    elif role == 'concierge':
+    if role == 'concierge':
         return redirect('concierge_dashboard')
-    elif role == 'dealer':
+    if role == 'dealer':
         return redirect('dealer_dashboard')
     return redirect('customer_dashboard')
+
 
 # --------------------------
 # Dashboards
@@ -116,14 +107,15 @@ def customer_dashboard(request):
     if status_filter != 'all':
         service_requests = service_requests.filter(status=status_filter)
 
-    invoices = Invoice1.objects.filter(service_request__customer=request.user).order_by('payment_status', '-invoice_date')
+    invoices = Invoice1.objects.filter(
+        service_request__customer=request.user
+    ).order_by('payment_status', '-invoice_date')
 
     return render(request, 'main/customer_dashboard.html', {
         'open_requests': service_requests,
         'status_filter': status_filter,
         'invoices': invoices,
     })
-
 
 @login_required
 @user_passes_test(is_concierge)
@@ -132,29 +124,30 @@ def concierge_dashboard(request):
     open_requests = ServiceRequest.objects.exclude(status='Waiting for Payment')
     if status_filter != 'all':
         open_requests = open_requests.filter(status=status_filter)
+
     return render(request, 'main/concierge_dashboard.html', {
         'open_requests': open_requests,
         'status_filter': status_filter,
     })
 
-
 @login_required
 @user_passes_test(is_dealer)
 def dealer_dashboard(request):
     status_filter = request.GET.get('status', 'all')
-    open_requests = ServiceRequest.objects.filter(assigned_to=request.user).exclude(status__in=['Waiting for Payment', 'Pending'])
+    open_requests = ServiceRequest.objects.filter(assigned_to=request.user) \
+                                        .exclude(status__in=['Waiting for Payment','Pending'])
     if status_filter != 'all':
         open_requests = open_requests.filter(status=status_filter)
+
     return render(request, 'main/dealer_dashboard.html', {
         'open_requests': open_requests,
         'status_filter': status_filter,
     })
 
-
 @login_required
 def owner_dashboard(request):
-    service_requests = ServiceRequest.objects.all()
-    invoices1 = Invoice1.objects.all()
+    service_requests = ServiceRequest.objects.all().order_by('-requested_at')
+    invoices1 = Invoice1.objects.all().order_by('-invoice_date')
     invoices2 = Invoice2.objects.all()
     return render(request, 'main/owner_dashboard.html', {
         'service_requests': service_requests,
@@ -162,37 +155,33 @@ def owner_dashboard(request):
         'invoices2': invoices2,
     })
 
-# -----------------------
-#  Service Requests
-# -----------------------
+
+# --------------------------
+# Service Requests
+# --------------------------
 @login_required
 def create_service_request(request):
-    # fetch cars owned by the current user
     cars = request.user.cars.all()
-    car_count = cars.count()
-    is_locked = (car_count == 1)
-    initial_data = {}
+    is_locked = (cars.count() == 1)
     missing_info = not request.user.address or not request.user.phone
 
     if request.method == 'POST':
         if missing_info:
-            messages.warning(request, "Please complete your account information before submitting a service request.")
+            messages.warning(
+                request,
+                "Please complete your account information before submitting a service request."
+            )
             return redirect('account_info')
 
         form = ServiceRequestForm(request.POST, user=request.user)
         if form.is_valid():
-            # get the selected car from the POST data
+            # pick existing car
             car = get_object_or_404(Car, id=request.POST.get('car'), owner=request.user)
-            if not car.model:
-                car.model = form.cleaned_data['model']
-            if not car.year:
-                car.year = form.cleaned_data['year']
-            car.save()
 
             job_type = form.cleaned_data['job_type']
             description = form.cleaned_data['description'] if job_type == 'Other' else job_type
 
-            service_request = ServiceRequest.objects.create(
+            sr = ServiceRequest.objects.create(
                 customer=request.user,
                 car=car,
                 job_type=job_type,
@@ -202,27 +191,21 @@ def create_service_request(request):
             )
 
             Invoice1.objects.create(
-                service_request=service_request,
+                service_request=sr,
                 first_name=request.user.first_name,
                 last_name=request.user.last_name,
                 address=request.user.address,
                 email=request.user.email,
                 phone=request.user.phone,
-                invoice_date=service_request.requested_at or timezone.now(),
+                invoice_date=sr.requested_at or timezone.now(),
                 price="",
                 currency="GEL",
                 payment_status="Unpaid"
             )
-
             messages.success(request, "Service request submitted.")
             return redirect('customer_dashboard')
     else:
-        try:
-            default_car = cars.get(license_plate__iexact=request.user.username)
-            initial_data = {'model': default_car.model, 'year': default_car.year}
-        except Car.DoesNotExist:
-            pass
-        form = ServiceRequestForm(user=request.user, initial=initial_data)
+        form = ServiceRequestForm(user=request.user)
 
     return render(request, 'main/service_request_form.html', {
         'form': form,
@@ -235,77 +218,93 @@ def create_service_request(request):
 @login_required
 def view_service_request(request, request_id):
     sr = get_object_or_404(ServiceRequest, id=request_id)
-
-    # Permission check
-    if request.user != sr.customer and request.user.role not in ['concierge', 'dealer', 'owner']:
-        return HttpResponseForbidden("You do not have permission to view this request.")
-
-    # FIX: the previous code had a syntax error
-    return render(request, 'main/view_service_request.html', {
-        'service_request': sr,
-    })
-
+    if (
+        request.user != sr.customer
+        and request.user.role not in ['concierge', 'dealer', 'owner']
+    ):
+        return HttpResponseForbidden("No permission to view this request.")
+    return render(request, 'main/view_service_request.html', {'service_request': sr})
 
 @login_required
 def edit_service_request(request, request_id):
-    service_request = get_object_or_404(ServiceRequest, id=request_id)
-
-    # Permission check
-    if request.user != service_request.customer and request.user.role not in ['concierge', 'dealer', 'owner']:
-        return HttpResponseForbidden("You don't have permission to edit this request.")
+    sr = get_object_or_404(ServiceRequest, id=request_id)
+    # permission to view
+    if (
+        request.user != sr.customer
+        and request.user.role not in ['concierge','dealer','owner']
+    ):
+        return HttpResponseForbidden("No permission to view this request.")
+    can_edit_locations = (
+        request.user == sr.customer or request.user.role == 'owner'
+    )
 
     if request.method == 'POST':
-        form = EditRequestForm(request.POST, instance=service_request, user=request.user)
+        form = EditRequestForm(request.POST, instance=sr, user=request.user)
         if form.is_valid():
             updated = form.save(commit=False)
-            status = form.cleaned_data.get('status')
-            assigned_to_id = request.POST.get('assigned_to')
 
-            # Role-based assignment
-            if status == 'Delivery' and request.user.role == 'concierge' and assigned_to_id:
-                updated.assigned_to = User.objects.get(id=assigned_to_id)
-            elif status == 'In service' and request.user.role == 'dealer' and assigned_to_id:
-                updated.assigned_to = User.objects.get(id=assigned_to_id)
-            elif status in ['Pending', 'Complete']:
-                updated.assigned_to = None
+            if can_edit_locations:
+                updated.pickup_location = request.POST.get('pickup_location', sr.pickup_location)
+                updated.dropoff_location = request.POST.get('dropoff_location', sr.dropoff_location)
+
+            status = form.cleaned_data['status']
+            # concierge → Delivery
+            if status == 'Delivery' and request.user.role == 'concierge':
+                updated.assigned_to     = request.user
+                updated.share_location = True
+            # dealer → In service
+            elif status == 'In service' and request.user.role == 'dealer':
+                updated.share_location = False
+            # all others → unassign
+            else:
+                updated.assigned_to     = None
+                updated.share_location = False
 
             updated.save()
             messages.success(request, "Service request updated.")
-            return redirect(f'{request.user.role}_dashboard')
+            return redirect(f"{request.user.role}_dashboard")
     else:
-        form = EditRequestForm(instance=service_request, user=request.user)
+        form = EditRequestForm(instance=sr, user=request.user)
 
     return render(request, 'main/edit_service_request.html', {
         'form': form,
-        'service_request': service_request,
+        'service_request': sr,
         'concierges': User.objects.filter(role='concierge'),
-        'dealers': User.objects.filter(role='dealer'),
+        'dealers':    User.objects.filter(role='dealer'),
+        'can_edit_locations': can_edit_locations,
     })
-
 
 @login_required
 def delete_service_request(request, request_id):
     sr = get_object_or_404(ServiceRequest, id=request_id)
-
-    if request.user != sr.customer and request.user.role not in ['concierge', 'dealer', 'owner']:
-        return HttpResponseForbidden("You do not have permission to delete this request.")
-
+    if (
+        request.user != sr.customer
+        and request.user.role not in ['concierge','dealer','owner']
+    ):
+        return HttpResponseForbidden("No permission to delete.")
     if request.method == 'POST':
         sr.delete()
-        messages.success(request, "Service request deleted successfully.")
+        messages.success(request, "Service request deleted.")
         return redirect('customer_dashboard')
-
     return render(request, 'main/delete_service_request.html', {'service_request': sr})
+
+@require_POST
+@login_required
+def set_request_delivery(request, pk):
+    sr = get_object_or_404(ServiceRequest, pk=pk, assigned_to=request.user)
+    sr.status = 'Delivery'
+    sr.assigned_to = None
+    sr.save()
+    return redirect('dealer_dashboard')
 
 
 # --------------------------
-# My Cars View
+# Car Management
 # --------------------------
 @login_required
 def my_cars(request):
     cars = Car.objects.filter(owner=request.user)
     return render(request, 'main/my_cars.html', {'cars': cars})
-
 
 @login_required
 def add_car(request):
@@ -325,9 +324,9 @@ def edit_car(request, car_id):
     if request.method == 'POST':
         form = CarForm(request.POST, instance=car)
         if form.is_valid():
-            updated_car = form.save(commit=False)
-            updated_car.license_plate = updated_car.license_plate.upper()
-            updated_car.save()
+            updated = form.save(commit=False)
+            updated.license_plate = updated.license_plate.upper()
+            updated.save()
             messages.success(request, "Car updated successfully.")
             return redirect('my_cars')
     else:
@@ -345,7 +344,7 @@ def delete_car(request, car_id):
 
 
 # --------------------------
-# Owner Management
+# Owner / Dealer / Concierge Management
 # --------------------------
 @login_required
 def view_owners(request):
@@ -361,8 +360,8 @@ def add_owner(request):
             new_owner.is_staff = True
             new_owner.role = 'owner'
             new_owner.save()
-            Group.objects.get_or_create(name="Owners")[0].user_set.add(new_owner)
-            messages.success(request, "Owner account created successfully.")
+            Group.objects.get_or_create(name='Owners')[0].user_set.add(new_owner)
+            messages.success(request, "Owner created.")
             return redirect('owner_dashboard')
     else:
         form = AddOwnerForm()
@@ -370,21 +369,13 @@ def add_owner(request):
 
 @login_required
 def delete_owner(request, owner_id):
-    from django.contrib.auth import get_user_model
-    User = get_user_model()
     owner = get_object_or_404(User, id=owner_id, role='owner')
-    
     if request.method == 'POST':
         owner.delete()
-        messages.success(request, "Owner deleted successfully.")
-        return redirect('view_owners')
-
+        messages.success(request, "Owner deleted.")
     return redirect('view_owners')
 
 
-# --------------------------
-# Dealer Management
-# --------------------------
 @login_required
 def view_dealers(request):
     dealers = Dealer.objects.select_related('user').all()
@@ -395,145 +386,107 @@ def add_dealer(request):
     if request.method == 'POST':
         form = AddDealerForm(request.POST)
         if form.is_valid():
-            # Create the user account first
             user = form.save(commit=False)
             user.role = 'dealer'
             user.is_staff = True
             user.save()
-            
-            # Add user to the "Dealers" group.
-            dealer_group, _ = Group.objects.get_or_create(name="Dealers")
-            user.groups.add(dealer_group)
-            
-            # Process job specialties:
-            # Get the list of selected specialties (this should be a list if MultipleChoiceField)
-            job_specialties = form.cleaned_data.get('job_specialty', [])
-            # Get any text entered in "Other" specialty field
-            other_specialty = form.cleaned_data.get('job_specialty_other', '').strip()
-            
-            # If 'Other' was selected, remove it and append the other text if present
-            if 'Other' in job_specialties:
-                job_specialties.remove('Other')
-                if other_specialty:
-                    job_specialties.append(other_specialty)
-            
-            # Create the Dealer profile and save the extra fields:
+            Group.objects.get_or_create(name='Dealers')[0].user_set.add(user)
+
+            specialties = form.cleaned_data.get('job_specialty', [])
+            other = form.cleaned_data.get('job_specialty_other','').strip()
+            if 'Other' in specialties and other:
+                specialties = [s for s in specialties if s!='Other'] + [other]
+
             Dealer.objects.create(
                 user=user,
                 name=f"{user.first_name} {user.last_name}",
                 phone=user.phone,
                 address=user.address,
-                job_specialty=job_specialties
+                job_specialty=specialties
             )
-            
-            messages.success(request, "Dealer added successfully.")
+            messages.success(request, "Dealer added.")
             return redirect('view_dealers')
     else:
         form = AddDealerForm()
-    
     return render(request, 'main/add_dealer.html', {'form': form})
-
 
 @login_required
 def edit_dealer(request, dealer_id):
     dealer = get_object_or_404(Dealer, id=dealer_id)
-    
     if request.method == 'POST':
         form = EditDealerForm(request.POST, instance=dealer)
         if form.is_valid():
-            dealer = form.save(commit=False)
-
-            # Process job_specialty list
             specialties = form.cleaned_data.get('job_specialty', [])
-            other = form.cleaned_data.get('job_specialty_other', '').strip()
-
-            if 'Other' in specialties:
-                specialties.remove('Other')
-                if other:
-                    specialties.append(other)
-
+            other = form.cleaned_data.get('job_specialty_other','').strip()
+            if 'Other' in specialties and other:
+                specialties = [s for s in specialties if s!='Other'] + [other]
             dealer.job_specialty = specialties
             dealer.save()
-
-            messages.success(request, "Dealer updated successfully.")
+            messages.success(request, "Dealer updated.")
             return redirect('view_dealers')
     else:
         form = EditDealerForm(instance=dealer)
-
-    return render(request, 'main/edit_dealer.html', {
-        'form': form,
-        'dealer': dealer
-    })
-
+    return render(request, 'main/edit_dealer.html', {'form': form, 'dealer': dealer})
 
 @login_required
 def delete_dealer(request, dealer_id):
     dealer = get_object_or_404(Dealer, id=dealer_id)
     if request.method == 'POST':
-        # Delete the associated user, which should cascade and remove dealer as well
+        # also remove the linked user
         if dealer.user:
             dealer.user.delete()
-        messages.success(request, "Dealer and associated user deleted successfully.")
+        messages.success(request, "Dealer deleted.")
         return redirect('view_dealers')
     return render(request, 'main/delete_dealer.html', {'dealer': dealer})
 
 
-# -------------------
-#   Concierge
-# -------------------
+@login_required
+def view_concierges(request):
+    concierges = User.objects.filter(role='concierge')
+    return render(request, 'main/view_concierges.html', {'concierges': concierges})
+
 @login_required
 def add_concierge(request):
-    
     if request.method == 'POST':
         form = AddConciergeForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
             user.role = 'concierge'
-            user.is_staff = False  # or True, if desired
+            user.is_staff = False
             user.save()
-
-            concierge_group, _ = Group.objects.get_or_create(name="Concierge")
-            user.groups.add(concierge_group)
-
-            messages.success(request, "Concierge added successfully.")
+            Group.objects.get_or_create(name='Concierge')[0].user_set.add(user)
+            messages.success(request, "Concierge added.")
             return redirect('view_concierges')
     else:
         form = AddConciergeForm()
     return render(request, 'main/add_concierge.html', {'form': form})
 
-def view_concierges(request):
-    concierges = User.objects.filter(role='concierge')
-    return render(request, 'main/view_concierges.html', {'concierges': concierges})
-
+@login_required
 def edit_concierge(request, concierge_id):
     concierge = get_object_or_404(User, id=concierge_id, role='concierge')
-
     if request.method == 'POST':
         form = EditConciergeForm(request.POST, instance=concierge)
         if form.is_valid():
             form.save()
+            messages.success(request, "Concierge updated.")
             return redirect('view_concierges')
     else:
         form = EditConciergeForm(instance=concierge)
+    return render(request, 'main/edit_concierge.html', {'form': form, 'concierge': concierge})
 
-    return render(request, 'main/edit_concierge.html', {
-        'form': form,
-        'concierge': concierge
-    })
-
+@login_required
 def delete_concierge(request, concierge_id):
     concierge = get_object_or_404(User, id=concierge_id, role='concierge')
-
     if request.method == 'POST':
         concierge.delete()
-        messages.success(request, "Concierge deleted successfully.")
+        messages.success(request, "Concierge deleted.")
         return redirect('view_concierges')
-
     return render(request, 'main/delete_concierge.html', {'concierge': concierge})
 
-# -------------------
-#   Invoices
-# -------------------
+
+# --------------------------
+# Invoices
+# --------------------------
 @login_required
 def view_invoice(request, invoice_type, invoice_id):
     if invoice_type == 1:
@@ -542,7 +495,6 @@ def view_invoice(request, invoice_type, invoice_id):
         invoice = get_object_or_404(Invoice2, id=invoice_id)
     else:
         raise Http404("Invalid invoice type.")
-
     return render(request, 'main/view_invoice.html', {
         'invoice': invoice,
         'invoice_type': invoice_type
@@ -550,26 +502,48 @@ def view_invoice(request, invoice_type, invoice_id):
 
 @login_required
 def edit_invoice(request, invoice_id):
-    invoice = Invoice1.objects.filter(id=invoice_id).first() or Invoice2.objects.filter(id=invoice_id).first()
-
+    invoice = (Invoice1.objects.filter(id=invoice_id).first()
+               or Invoice2.objects.filter(id=invoice_id).first())
     if not invoice:
         messages.error(request, "Invoice not found.")
-        return redirect("owner_dashboard")  # changed 'owner' to 'owner_dashboard'
+        return redirect("owner_dashboard")
 
-    # Insert your logic for editing Invoice1 or Invoice2
-    # ...
-    messages.info(request, "Edit invoice logic not yet implemented.")
-    return redirect('owner_dashboard')
+    if request.method == "POST":
+        old = invoice.payment_status
+        invoice.price          = request.POST.get("price",       invoice.price)
+        invoice.currency       = request.POST.get("currency",    invoice.currency)
+        new = request.POST.get("payment_status", invoice.payment_status)
+        invoice.payment_status = new
+        invoice.updated_at     = timezone.now()
+        invoice.save()
+
+        # bump SR back to Pending if it was waiting
+        sr = invoice.service_request
+        if sr and old!="Paid" and new=="Paid" and sr.status=="Waiting for Payment":
+            sr.status = "Pending"
+            sr.save()
+
+        messages.success(request, "Invoice updated.")
+        return redirect("owner_dashboard")
+    else:
+        form = (Invoice1Form(instance=invoice)
+                if isinstance(invoice, Invoice1)
+                else Invoice2Form(instance=invoice))
+        return render(request, "main/edit_invoice.html", {
+            "form": form,
+            "invoice": invoice,
+        })
 
 
+# --------------------------
+# Inventory
+# --------------------------
 @login_required
 def view_inventory(request):
-    inventory = Inventory.objects.all()
-    return render(request, 'main/view_inventory.html', {'inventory': inventory})
+    items = Inventory.objects.all()
+    return render(request, 'main/view_inventory.html', {'inventory': items})
 
-from django.shortcuts import render, redirect
-from .forms import AddInventoryForm
-
+@login_required
 def add_inventory(request):
     if request.method == 'POST':
         form = AddInventoryForm(request.POST)
@@ -580,32 +554,71 @@ def add_inventory(request):
         form = AddInventoryForm()
     return render(request, 'main/add_inventory.html', {'form': form})
 
-
 @login_required
 def edit_inventory(request, inventory_id):
     item = get_object_or_404(Inventory, id=inventory_id)
-
     if request.method == 'POST':
         form = EditInventoryForm(request.POST, instance=item)
         if form.is_valid():
             form.save()
-            messages.success(request, "Inventory item updated successfully.")
+            messages.success(request, "Inventory updated.")
             return redirect('view_inventory')
     else:
         form = EditInventoryForm(instance=item)
-
-    return render(request, 'main/edit_inventory.html', {'form': form, 'item': item})
+    return render(request, 'main/edit_inventory.html', {
+        'form': form,
+        'item': item
+    })
 
 @require_POST
+@login_required
 def delete_inventory(request, item_id):
     try:
         item = Inventory.objects.get(id=item_id)
         if item.item_quantity > 1:
             item.item_quantity -= 1
             item.save()
-            return JsonResponse({'status': 'decremented', 'new_quantity': item.item_quantity})
+            return JsonResponse({'status':'decremented','new_quantity':item.item_quantity})
         else:
             item.delete()
-            return JsonResponse({'status': 'deleted'})
+            return JsonResponse({'status':'deleted'})
     except Inventory.DoesNotExist:
-        return JsonResponse({'status': 'error', 'message': 'Item not found'}, status=404)
+        return JsonResponse({'status':'error','message':'Not found'}, status=404)
+
+
+# --------------------------
+# Real-time Location Updates
+# --------------------------
+@require_POST
+@login_required
+def update_concierge_location(request, request_id):
+    sr = get_object_or_404(
+        ServiceRequest,
+        id=request_id,
+        assigned_to=request.user,
+        status='Delivery'
+    )
+    if not sr.share_location:
+        return HttpResponseForbidden("Location sharing off")
+
+    data = json.loads(request.body)
+    sr.concierge_latitude  = data.get('lat')
+    sr.concierge_longitude = data.get('lng')
+    sr.save(update_fields=['concierge_latitude','concierge_longitude'])
+    return JsonResponse({'success': True})
+
+@login_required
+def service_request_location(request, request_id):
+    sr = get_object_or_404(ServiceRequest, id=request_id)
+    if (
+        request.user != sr.customer
+        and request.user.role not in ['concierge','dealer','owner']
+    ):
+        return HttpResponseForbidden("No permission")
+    if sr.status!='Delivery' or not sr.share_location:
+        return JsonResponse({'error':'Location not available'}, status=404)
+
+    return JsonResponse({
+        'lat': sr.concierge_latitude,
+        'lng': sr.concierge_longitude,
+    })

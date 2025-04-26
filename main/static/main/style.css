@@ -96,6 +96,23 @@ table {
   min-width: 600px;
 }
 
+/* Style for sortable headers */
+th a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+th a:hover {
+    text-decoration: none !important;
+}
+
+/* Style for sort icons */
+.bi-chevron-up, .bi-chevron-down {
+    font-size: 0.8rem;
+}
+
+
 /* -------------------- Responsive Adjustments -------------------- */
 @media (max-width: 768px) {
   .page-wrapper {
