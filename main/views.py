@@ -147,7 +147,7 @@ def dealer_dashboard(request):
 @login_required
 def owner_dashboard(request):
     service_requests = ServiceRequest.objects.all().order_by('-requested_at')
-    invoices1 = Invoice1.objects.all().order_by('invoice_date')
+    invoices1 = Invoice1.objects.all().order_by('-invoice_date')
     invoices2 = Invoice2.objects.all()
     return render(request, 'main/owner_dashboard.html', {
         'service_requests': service_requests,
