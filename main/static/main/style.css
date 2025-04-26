@@ -24,45 +24,58 @@ html, body {
   line-height: 1.6;
 }
 
-/* -------------------- Layout Structure -------------------- */
+/* -------------------- Fixed Layout Structure -------------------- */
 .page-wrapper {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-}
-
-main {
-  flex: 1;
+  position: relative;
   padding-top: 60px; /* Header height */
   padding-bottom: 60px; /* Footer height */
-  position: relative;
-  overflow: visible; /* Changed from auto to visible */
 }
 
+/* Main content container */
+main {
+  flex: 1;
+  overflow-y: auto; /* Enable scrolling for content */
+  padding: 20px 0;
+}
+
+/* Content wrapper */
 .main-content {
   max-width: 1400px;
   margin: 0 auto;
   width: 100%;
-  padding: 20px;
-  min-height: calc(100vh - 120px); /* Account for header + footer */
-  display: flex;
-  flex-direction: column;
+  padding: 0 20px;
 }
 
 .dashboard-section {
   margin-bottom: 2rem;
-  flex: 1;
 }
 
-/* -------------------- Header & Navigation -------------------- */
+/* -------------------- Fixed Header -------------------- */
 header {
   background: rgba(0, 0, 0, 0.9);
   position: fixed;
-  width: 100%;
   top: 0;
-  z-index: 1000;
+  width: 100%;
   height: 60px;
+  z-index: 1000;
   backdrop-filter: blur(5px);
+}
+
+/* -------------------- Fixed Footer -------------------- */
+footer {
+  background: var(--dark-bg);
+  color: var(--text-light);
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  height: 60px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* -------------------- Table Styles -------------------- */
@@ -78,30 +91,19 @@ header {
 table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 600px; /* Ensures table doesn't collapse too much */
-}
-
-/* -------------------- Footer -------------------- */
-footer {
-  height: 60px;
-  flex-shrink: 0;
-  background: var(--dark-bg);
-  color: var(--text-light);
-  text-align: center;
-  padding: 20px;
-  position: fixed;
-  bottom: 0;
-  width: 100%;
+  min-width: 600px;
 }
 
 /* -------------------- Responsive Adjustments -------------------- */
 @media (max-width: 768px) {
-  .main-content {
-    padding: 15px;
-    min-height: calc(100vh - 120px);
+  .page-wrapper {
+    padding-bottom: 80px; /* Extra space for mobile */
   }
   
-  /* Adjust table padding on mobile */
+  .main-content {
+    padding: 0 15px;
+  }
+  
   th, td {
     padding: 8px 10px;
   }
@@ -109,12 +111,15 @@ footer {
 
 @media (max-width: 480px) {
   .main-content {
-    padding: 10px;
+    padding: 0 10px;
   }
   
-  /* Stack action buttons vertically on small screens */
   .action-buttons {
     flex-direction: column;
     gap: 5px;
+  }
+  
+  .text-truncate {
+    max-width: 150px !important;
   }
 }
