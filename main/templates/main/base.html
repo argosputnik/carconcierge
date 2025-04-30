@@ -83,11 +83,6 @@
                   </li>
 
                   {# Conditionally display links based on user roles #}
-                  {% comment %}
-                  You might check user.role directly if your User model has a 'role' field
-                  or iterate through groups as you had before if using Django's Group model.
-                  Below is an example using user.role for clarity, adjust based on your User model.
-                  {% endcomment %}
 
                   {# Example using user.role (adjust to your actual implementation) #}
                   {% if user.role == "customer" %}
@@ -108,17 +103,6 @@
                     </li>
                     {# Add other concierge-specific links here #}
                     {# <li><a class="dropdown-item" href="{% url 'add_new_concierge_item' %}">Add New Item</a></li> #}
-                  {% endif %}
-
-                  {% if user.role == "owner" %}
-                    <li>
-                      <a
-                        class="dropdown-item"
-                        href="{% url 'owner_dashboard' %}"
-                      >View Owner Dashboard</a>
-                    </li>
-                    {# Add other owner-specific links here #}
-                    {# <li><a class="dropdown-item" href="{% url 'add_new_owner_item' %}">Add New Item</a></li> #}
                   {% endif %}
 
                   {% if user.role == "dealer" %}
