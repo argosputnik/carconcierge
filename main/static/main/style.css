@@ -30,9 +30,9 @@ html, body {
   flex-direction: column;
   min-height: 100vh;
   /* CRITICAL: Add padding to push content away from FIXED header/footer */
-  padding-top: 60px;    /* Must match header height */
-  padding-bottom: 60px; /* Must match footer height */
-  /* position: relative; */ /* Not strictly needed if header/footer are fixed */
+  /*padding-top: 60px;    /* Must match header height */
+  /*padding-bottom: 60px; /* Must match footer height */
+   position: relative; */ /* Not strictly needed if header/footer are fixed */
 }
 
 /* Main content container */
@@ -161,7 +161,7 @@ main.no-padding {
 
 /*----------------------Dashboards ---------------------- */
 .scrollable-content {
-   padding-top: 100px;
+   padding-top: 200px;
    }
 
 /* -------------------- Table Styles -------------------- */
