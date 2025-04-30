@@ -16,8 +16,17 @@
   --focus-shadow: rgba(13, 110, 253, 0.25);
 }
 
-html, body {
-  height: 100%;
+html { 
+   min-height: 100% 
+}
+
+html, body, header, footer {
+  display: grid;
+  }
+
+
+body {
+  grid-template-rows: auto 1fr auto; 
   margin: 0;
   padding: 0;
   font-family: 'Helvetica Neue', Arial, sans-serif;
