@@ -661,4 +661,3 @@ def service_request_location(request, request_id):
         'lng': sr.concierge_longitude,
     })
 
-
