@@ -143,18 +143,27 @@ th a:hover {
   }
 }
 
-/* Add this to your existing CSS */
+/* Update the price input group styles */
 .price-input-group {
   display: flex;
   align-items: center;
   gap: 5px;
-  max-width: 200px; /* Limit the total width */
+  max-width: 140px; /* Reduced from 200px */
 }
 
 .price-input-group input {
-  width: 100px; /* Fixed width for price input */
+  width: 70px; /* Reduced from 100px */
 }
 
 .price-input-group select {
-  width: 70px; /* Fixed width for currency select */
+  width: 60px; /* Reduced from 70px */
+}
+
+/* Add this to ensure the form controls stay compact */
+.price-input-group .form-control-sm,
+.price-input-group .form-select-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  min-height: 0;
+  height: 31px;
 }
