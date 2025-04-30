@@ -142,3 +142,19 @@ th a:hover {
     max-width: 150px !important;
   }
 }
+
+/* Add this to your existing CSS */
+.price-input-group {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 200px; /* Limit the total width */
+}
+
+.price-input-group input {
+  width: 100px; /* Fixed width for price input */
+}
+
+.price-input-group select {
+  width: 70px; /* Fixed width for currency select */
+}
