@@ -148,7 +148,7 @@ th a:hover {
   display: flex;
   align-items: center;
   gap: 2px;
-  max-width: 750px;
+  max-width: 110px;
 }
 
 .price-input-group input {
@@ -172,8 +172,46 @@ th a:hover {
   padding-right: 0.25rem;
 }
 
-h1, h3, .btn   {
-	text-align: center;
-	margin-top: 20px;
-	padding: 0 20px;
+/* -------------------- Hero Section Styles -------------------- */
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 120px); /* Adjust for sticky header/footer */
+  width: 100%;
+  background-color: #f8f9fa;
+}
+
+.hero-content {
+  text-align: center;
+  width: 100%;
+  max-width: 800px;
+  padding: 2rem;
+}
+
+.hero-content h1,
+.hero-content h3 {
+  text-align: center;
+  width: 100%;
+  display: block;
+}
+
+.hero-content h1 {
+  font-size: 2.5rem;
+  color: #333;
+  margin-bottom: 3rem;
+}
+
+.hero-content h3 {
+  font-size: 1.5rem;
+  color: #555;
+  margin: 0.5rem 0;
+}
+
+.hero-content .btn {
+  margin-top: 3rem;
+  min-width: 200px;
+  padding: 0.75rem 1.5rem;
+  font-size: 1.1rem;
 }
