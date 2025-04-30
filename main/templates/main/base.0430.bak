@@ -82,45 +82,6 @@
                           href="{% url 'my_cars' %}"
                         >My Cars</a>
                       </li>
-                    {% elif group.name == "concierge" %}
-                      <li>
-                        <a
-                          class="dropdown-item"
-                          href="{% url 'concierge_dashboard' %}" {# Replace with your actual URL name #}
-                        >View Concierge Dashboard</a>
-                      </li>
-                      <li>
-                        <a
-                          class="dropdown-item"
-                          href="{% url 'add_new_concierge_item' %}" {# Replace with your actual URL name #}
-                        >Add New Item (Concierge)</a> {# Adjust link text as needed #}
-                      </li>
-                    {% elif group.name == "owner" %}
-                      <li>
-                        <a
-                          class="dropdown-item"
-                          href="{% url 'owner_dashboard' %}" {# Replace with your actual URL name #}
-                        >View Owner Dashboard</a>
-                      </li>
-                      <li>
-                        <a
-                          class="dropdown-item"
-                          href="{% url 'add_new_owner_item' %}" {# Replace with your actual URL name #}
-                        >Add New Item (Owner)</a> {# Adjust link text as needed #}
-                      </li>
-                    {% elif group.name == "dealer" %}
-                      <li>
-                        <a
-                          class="dropdown-item"
-                          href="{% url 'dealer_dashboard' %}" {# Replace with your actual URL name #}
-                        >View Dealer Dashboard</a>
-                      </li>
-                      <li>
-                        <a
-                          class="dropdown-item"
-                          href="{% url 'add_new_dealer_item' %}" {# Replace with your actual URL name #}
-                        >Add New Item (Dealer)</a> {# Adjust link text as needed #}
-                      </li>
                     {% endif %}
                   {% endfor %}
                   <li><hr class="dropdown-divider"></li>
@@ -182,4 +143,3 @@
   ></script>
 </body>
 </html>
-
