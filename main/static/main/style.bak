@@ -16,81 +16,78 @@
   --focus-shadow: rgba(13, 110, 253, 0.25);
 }
 
-html, body, header, footer {
-  display: grid;
-  margin: 0;
-
 html, body {
+  height: 100%;
+  margin: 0;
   padding: 0;
   font-family: 'Helvetica Neue', Arial, sans-serif;
   line-height: 1.6;
 }
 
-body {
+/* -------------------- Fixed Layout Structure -------------------- */
+.page-wrapper {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-}
-
-/* -------------------- Fixed Layout Structure -------------------- */
-.page-wrapper {
-  flex: 1 0 auto;
+  position: relative;
   padding-top: 60px; /* Header height */
+  padding-bottom: 60px; /* Footer height */
 }
 
 /* Main content container */
-.main-content {
-  max-width: 1400px;
-  margin: 0 auto;
-  width: 100%;
-  padding: 20px;
-  padding-bottom: 100px; /* Increased padding bottom */
+main {
+  flex: 1;
+  overflow-y: auto; /* Enable scrolling for content */
+  padding: 20px 0;
+  margin-bottom: 60px; /* Add margin to prevent content from being hidden behind footer */
 }
 
 /* Content wrapper */
 .main-content {
-  flex: 1;
   max-width: 1400px;
   margin: 0 auto;
   width: 100%;
-  padding: 20px;
-  position: relative;
+  padding: 0 20px;
+  overflow-y: auto; /* Enable scrolling for content */
 }
 
 .dashboard-section {
-  margin-bottom: 4rem; /* Increased margin */
-  position: relative;
+  margin-bottom: 2rem;
 }
 
 /* -------------------- Fixed Header -------------------- */
 header {
+  background: rgba(0, 0, 0, 0.9);
   position: sticky;
   top: 0;
-  left: 0;
-  right: 0;
+  width: 100%;
   height: 60px;
-  background: rgba(0, 0, 0, 0.9);
   z-index: 1000;
   backdrop-filter: blur(5px);
 }
 
 /* -------------------- Fixed Footer -------------------- */
 footer {
-  flex-shrink: 0;
   background: var(--dark-bg);
   color: var(--text-light);
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   position: sticky;
   bottom: 0;
   width: 100%;
+  height: 60px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* -------------------- Table Styles -------------------- */
 .table-responsive {
-  margin-bottom: 2rem;
+  width: 100%;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
 }
 
 table {
@@ -115,52 +112,6 @@ th a:hover {
     font-size: 0.8rem;
 }
 
-/* Style pagination containers */
-.pagination-container {
-    margin-bottom: 3rem; /* Increased margin */
-}
-
-/* Style pagination elements */
-.pagination {
-    display: flex;
-    justify-content: center;
-    gap: 0.25rem;
-    list-style: none;
-    padding: 0;
-}
-
-.page-item .page-link {
-    padding: 0.5rem 1rem;
-    border: 1px solid #dee2e6;
-    color: #007bff;
-    text-decoration: none;
-    background-color: #fff;
-}
-
-.page-item.active .page-link {
-    background-color: #007bff;
-    color: #fff;
-    border-color: #007bff;
-}
-
-.page-link:hover {
-    z-index: 2;
-    color: #0056b3;
-    text-decoration: none;
-    background-color: #e9ecef;
-    border-color: #dee2e6;
-}
-
-/* Update scrollable content */
-.scrollable-content {
-    width: 100%;
-    overflow-y: visible; /* Changed from auto */
-}
-
-/* Update dashboard section */
-.dashboard-section:last-child {
-    margin-bottom: 6rem; /* Increased margin for last section */
-}
 
 /* -------------------- Responsive Adjustments -------------------- */
 @media (max-width: 768px) {
@@ -190,4 +141,77 @@ th a:hover {
   .text-truncate {
     max-width: 150px !important;
   }
+}
+
+/* Update the price input group styles */
+.price-input-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 750px;
+}
+
+.price-input-group input {
+  width: 55px;
+}
+
+.price-input-group select {
+  width: 50px;
+}
+
+.price-input-group .form-control-sm,
+.price-input-group .form-select-sm {
+  padding: 0.25rem;
+  font-size: 0.75rem;
+  min-height: 0;
+  height: 28px;
+}
+
+.price-input-group select.form-select-sm {
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+}
+
+/* -------------------- Hero Section Styles -------------------- */i
+
+/* -------------------- Hero Section Styles -------------------- */
+.hero {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 120px); /* 120px = header (60px) + footer (60px) */
+  width: 100%;
+  background-color: #f8f9fa;
+  padding: 20px; /* Add some padding around the edges */
+}
+
+.hero-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 800px;
+  padding: 2rem;
+  text-align: center;
+  margin: 0 auto; /* Center horizontally */
+}
+
+.hero-content h1 {
+  font-size: 2.5rem;
+  color: #333;
+  margin-bottom: 1.5rem; /* Reduced from 3rem */
+}
+
+.hero-content h3 {
+  font-size: 1.5rem;
+  color: #555;
+  margin: 0.5rem 0;
+}
+
+.hero-content .btn {
+  margin-top: 2rem; /* Reduced from 3rem */
+  min-width: 200px;
+  padding: 0.75rem 1.5rem;
+  font-size: 1.1rem;
 }
