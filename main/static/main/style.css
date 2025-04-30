@@ -45,7 +45,7 @@ main {
 /* -------------------- Fixed Header -------------------- */
 header {
   background: rgba(0, 0, 0, 0.9);
-  position: fixed;      /* Use fixed for simplicity */
+  position: sticky;
   top: 0;
   left: 0; /* Add left: 0 for fixed positioning */
   width: 100%;
@@ -60,7 +60,7 @@ header {
 footer {
   background: var(--dark-bg);
   color: var(--text-light);
-  position: fixed;      /* Use fixed for simplicity */
+  position: sticky;
   bottom: 0;
   left: 0; /* Add left: 0 for fixed positioning */
   width: 100%;
