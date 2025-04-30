@@ -84,7 +84,7 @@ main.no-padding {
 .hero {
   width: 100%;
   /* Add padding INSIDE the hero section for spacing */
-  padding: 300px 20px; /* Adjust 40px as needed for vertical spacing */
+  padding: 200px 20px; /* Adjust 40px as needed for vertical spacing */
   /* Core style for centering inline/inline-block children */
   text-align: center;
 }
