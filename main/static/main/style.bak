@@ -16,9 +16,11 @@
   --focus-shadow: rgba(13, 110, 253, 0.25);
 }
 
-html, body {
-  height: 100%;
+html, body, header, footer {
+  display: grid;
   margin: 0;
+
+html, body {
   padding: 0;
   font-family: 'Helvetica Neue', Arial, sans-serif;
   line-height: 1.6;
