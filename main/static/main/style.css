@@ -178,7 +178,7 @@ th a:hover {
   flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
-  height: 100vh !important;
+  height: 100%;
   width: 100vw !important;
   background: #f8f9fa !important;
 }
@@ -211,7 +211,8 @@ th a:hover {
 }
 
 main.no-padding {
-  height: 100vh;
-  min-height: 100vh;
+  height: calc(100vh - 60px);
+  min-height: calc(100vh - 60px);
   box-sizing: border-box;
+  padding-top: 60px; /* Offset for sticky header */
 }
