@@ -180,25 +180,34 @@ th a:hover {
   text-align: center;
   padding: 2rem;
   background-color: #f8f9fa;
+  min-height: calc(100vh - 160px);
 }
 
 .hero-content {
-  padding-top: 2rem;
+  padding-top: 4rem;
+  padding-bottom: 4rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  justify-content: center;
+  gap: 1.5rem;
+  max-width: 800px;
+  width: 100%;
 }
 
 .hero-content h1 {
-  margin-bottom: 1.5rem;
+  font-size: 2.5rem;
+  margin-bottom: 2rem;
 }
 
 .hero-content h3 {
-  margin-bottom: 0.5rem;
+  font-size: 1.5rem;
+  margin: 0;
 }
 
 .hero-content .btn {
   margin-top: 2rem;
   min-width: 200px;
+  padding: 0.75rem 1.5rem;
+  font-size: 1.1rem;
 }

@@ -10,18 +10,14 @@
       <h3>We pick up your car</h3>
       <h3>Fix your car</h3>
       <h3>Return your car</h3>
-      <h3>Hassle free</h3></div>
+      <h3>Hassle free</h3>
       
       {% if user.is_authenticated %}
-  <a href="{% url 'redirect_after_login' %}" class="btn btn-dark">My Dashboard</a>
-{% else %}
-  <a href="{% url 'login' %}" class="btn btn-dark">Login/Register</a>
-{% endif %}
-
-
+        <a href="{% url 'redirect_after_login' %}" class="btn btn-dark">My Dashboard</a>
+      {% else %}
+        <a href="{% url 'login' %}" class="btn btn-dark">Login/Register</a>
+      {% endif %}
     </div>
   </section>
-
-  
 {% endblock %}
 
