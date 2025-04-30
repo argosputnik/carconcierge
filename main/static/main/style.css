@@ -29,53 +29,39 @@ html, body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  position: relative;
-  /* Keep this padding to push content below fixed header/above fixed footer */
-  padding-top: 60px; /* Header height */
-  padding-bottom: 60px; /* Footer height */
+  /* CRITICAL: Add padding to push content away from FIXED header/footer */
+  padding-top: 60px;    /* Must match header height */
+  padding-bottom: 60px; /* Must match footer height */
+  /* position: relative; */ /* Not strictly needed if header/footer are fixed */
 }
 
 /* Main content container */
 main {
-  flex: 1; /* Allows main to grow and fill available space */
-  /* overflow-y: auto; */ /* Generally better on page-wrapper or body if needed */
-  /* padding: 20px 0; */ /* Specific pages might override this */
-  /* margin-bottom: 60px; */ /* Redundant due to page-wrapper padding-bottom */
-}
-
-/* Content wrapper (for general content pages, not necessarily the hero) */
-.main-content {
-  max-width: 1400px;
-  margin: 0 auto;
-  width: 100%;
-  padding: 20px; /* Add default padding back */
-  /* overflow-y: auto; */ /* Avoid nested scrollbars if possible */
-}
-
-.dashboard-section {
-  margin-bottom: 2rem;
+  flex: 1; /* Allows main to grow */
+  width: 100%; /* Ensure main takes full width */
 }
 
 /* -------------------- Fixed Header -------------------- */
 header {
   background: rgba(0, 0, 0, 0.9);
-  position: sticky;
+  position: fixed;      /* Use fixed for simplicity */
   top: 0;
+  left: 0; /* Add left: 0 for fixed positioning */
   width: 100%;
   height: 60px;
   z-index: 1000;
-  display: flex; /* Optional: if you want to align items inside header */
-  align-items: center; /* Optional: vertically center header content */
-  padding: 0 20px; /* Optional: Add horizontal padding inside header */
-  /* Removed padding-bottom: 200px; as it seemed incorrect */
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
 }
 
 /* -------------------- Fixed Footer -------------------- */
 footer {
   background: var(--dark-bg);
   color: var(--text-light);
-  position: sticky;
+  position: fixed;      /* Use fixed for simplicity */
   bottom: 0;
+  left: 0; /* Add left: 0 for fixed positioning */
   width: 100%;
   height: 60px;
   z-index: 1000;
@@ -84,143 +70,37 @@ footer {
   justify-content: center;
 }
 
-/* -------------------- Table Styles -------------------- */
-/* ... (keep your table styles) ... */
-.table-responsive {
-  width: 100%;
-  margin-bottom: 1rem;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  border: 1px solid var(--border-color);
-  border-radius: 0.5rem;
-}
 
-table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 600px;
-}
-
-th a {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-th a:hover {
-    text-decoration: none !important;
-}
-
-.bi-chevron-up, .bi-chevron-down {
-    font-size: 0.8rem;
-}
-
-/* -------------------- Responsive Adjustments -------------------- */
-/* ... (keep your responsive styles) ... */
-@media (max-width: 768px) {
-  .page-wrapper {
-    /* Adjust footer padding if footer height changes on mobile */
-    /* padding-bottom: 80px; */ /* Example if footer becomes taller */
-  }
-
-  .main-content {
-    padding: 15px;
-  }
-
-  th, td {
-    padding: 8px 10px;
-  }
-}
-
-@media (max-width: 480px) {
-  .main-content {
-    padding: 10px;
-  }
-
-  .action-buttons {
-    flex-direction: column;
-    gap: 5px;
-  }
-
-  .text-truncate {
-    max-width: 150px !important;
-  }
-}
-
-/* ... (keep your price input styles) ... */
-.price-input-group {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  max-width: 110px;
-}
-
-.price-input-group input {
-  width: 55px;
-}
-
-.price-input-group select {
-  width: 50px;
-}
-
-.price-input-group .form-control-sm,
-.price-input-group .form-select-sm {
-  padding: 0.25rem;
-  font-size: 0.75rem;
-  min-height: 0;
-  height: 28px;
-}
-
-.price-input-group select.form-select-sm {
-  padding-left: 0.25rem;
-  padding-right: 0.25rem;
-}
-
-/* ----- Updated Hero Styles ----- */
+/* ----- Simplified Hero Styles for Centering & Visibility ----- */
 
 /* Target the main element specifically when it has the no-padding class */
 main.no-padding {
-  padding: 0; /* Keep removal of default padding from main */
-  margin: 0; /* Keep removal of default margin from main */
-  display: flex;          /* Use flexbox */
-  flex-direction: column; /* Stack children vertically */
-  /* REMOVE align-items: center; */ /* Don't vertically center the .hero section itself */
-  /* Keep justify-content: center; ONLY if .hero max-width < main width */
-  /* Let's remove it for simplicity, as .hero has width: 100% */
+  padding: 0; /* Remove default padding from main */
+  margin: 0; /* Remove default margin from main */
+  /* Remove complex flex rules */
 }
 
 /* Hero section container */
 .hero {
-  width: 100%; /* Take full width of its container (main) */
-  max-width: 1400px; /* Optional: limit max width */
-  margin-left: auto;  /* Center the hero block if max-width is applied */
-  margin-right: auto; /* Center the hero block if max-width is applied */
-  padding: 40px 20px; /* Add sufficient top/bottom padding inside the hero section */
-                      /* Increase 40px if more space is needed below the header */
-  display: flex; /* Use flexbox for its content */
-  flex-direction: column; /* Stack content vertically */
-  align-items: center; /* Horizontally center the .hero-content block */
-  justify-content: center; /* Vertically center content within the .hero section */
-  text-align: center; /* Center text within child elements (h1, h3, a.btn) */
-  flex-grow: 1; /* Allow hero to grow and take available space in main */
-  /* Optional: Calculate min-height to fill space between header/footer */
-  min-height: calc(100vh - 60px - 60px - 80px); /* vh - header - footer - hero internal padding (40*2) */
-                                                /* Adjust 120px if header/footer heights change */
-                                                /* Adjust 80px if hero padding changes */
+  width: 100%;
+  /* Add padding INSIDE the hero section for spacing */
+  padding: 40px 20px; /* Adjust 40px as needed for vertical spacing */
+  /* Core style for centering inline/inline-block children */
+  text-align: center;
 }
 
-/* Hero content styling */
+/* Hero content block */
 .hero-content {
-  /* width: 100%; */ /* Not needed as parent align-items centers it */
-  max-width: 800px; /* Limit max width of the text block */
-  /* Padding inside .hero-content might be redundant if .hero padding suffices */
-  /* You can keep or remove based on desired spacing */
-  /* padding: 2rem; */
+  /* This block itself doesn't need centering if parent uses text-align */
+  /* But we can limit its width and center the block for better readability */
+  max-width: 800px;   /* Optional: Limit width */
+  margin: 0 auto;     /* Center the block if max-width is applied */
+  /* All children will inherit text-align: center from .hero */
 }
 
 .hero-content h1 {
   font-size: 2.5rem;
-  color: #333; /* Use text-dark variable? var(--text-dark) */
+  color: var(--text-dark, #333);
   margin-bottom: 1.5rem;
 }
 
@@ -235,4 +115,9 @@ main.no-padding {
   min-width: 200px;
   padding: 0.75rem 1.5rem;
   font-size: 1.1rem;
+  /* Ensure it behaves like inline-block to respect text-align */
+  display: inline-block;
 }
+
+/* --- Keep other styles (tables, responsive etc.) --- */
+/* ... */
