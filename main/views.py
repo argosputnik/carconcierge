@@ -174,13 +174,13 @@ def owner_dashboard(request):
     service_requests_list = ServiceRequest.objects.all().order_by(sort_field)
 
     # Service requests pagination
-    sr_paginator = Paginator(service_requests_list, 2)  # Show 2 requests per page
-    sr_page_number = request.GET.get('sr_page')  # Changed to sr_page to differentiate from invoice pagination
+    sr_paginator = Paginator(service_requests_list, 5)  # Show 5 requests per page
+    sr_page_number = request.GET.get('sr_page') 
     service_requests = sr_paginator.get_page(sr_page_number)
     
     # Get invoices with default sorting and pagination
     invoices_list = Invoice1.objects.all().order_by('-invoice_date')
-    inv_paginator = Paginator(invoices_list, 2)  # Show 2 invoices per page
+    inv_paginator = Paginator(invoices_list, 5)  # Show 5 invoices per page
     inv_page_number = request.GET.get('inv_page')
     invoices1 = inv_paginator.get_page(inv_page_number)
     
