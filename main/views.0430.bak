@@ -8,7 +8,6 @@ from django.http import HttpResponse, HttpResponseForbidden, Http404, JsonRespon
 from django.contrib import messages
 from django.utils import timezone
 from django.db.models import F, Case, When, Value, CharField
-from django.core.paginator import Paginator
 
 from .models import (
     Car,
@@ -171,23 +170,18 @@ def owner_dashboard(request):
         sort_field = f'-{sort_field}'
     
     # Apply sorting to service requests
-    service_requests_list = ServiceRequest.objects.all().order_by(sort_field)
-
-    # Service requests pagination
-    sr_paginator = Paginator(service_requests_list, 2)  # Show 2 requests per page
-    sr_page_number = request.GET.get('sr_page')  # Changed to sr_page to differentiate from invoice pagination
-    service_requests = sr_paginator.get_page(sr_page_number)
+    service_requests = ServiceRequest.objects.all().order_by(sort_field)
     
-    # Get invoices with default sorting and pagination
-    invoices_list = Invoice1.objects.all().order_by('-invoice_date')
-    inv_paginator = Paginator(invoices_list, 2)  # Show 2 invoices per page
-    inv_page_number = request.GET.get('inv_page')
-    invoices1 = inv_paginator.get_page(inv_page_number)
+    # Get invoices with default sorting
+    invoices1 = Invoice1.objects.all().order_by('-invoice_date')
+    invoices2 = Invoice2.objects.all()
     
+    # Pass sort parameters to template for generating sort links
     context = {
         'service_requests': service_requests,
         'invoices1': invoices1,
-        'current_sort': sort_field.lstrip('-'),
+        'invoices2': invoices2,
+        'current_sort': sort_field.lstrip('-'),  # Remove the minus sign if present
         'current_direction': sort_direction,
     }
     
@@ -660,5 +654,4 @@ def service_request_location(request, request_id):
         'lat': sr.concierge_latitude,
         'lng': sr.concierge_longitude,
     })
-
 
