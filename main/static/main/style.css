@@ -16,17 +16,8 @@
   --focus-shadow: rgba(13, 110, 253, 0.25);
 }
 
-html { 
-   min-height: 100% 
-}
-
-html, body, header, footer {
-  display: grid;
-  }
-
-
-body {
-  grid-template-rows: auto 1fr auto; 
+html, body {
+  height: 100%;
   margin: 0;
   padding: 0;
   font-family: 'Helvetica Neue', Arial, sans-serif;
@@ -183,6 +174,7 @@ th a:hover {
 
 /* -------------------- Hero Section Styles -------------------- */
 .hero {
+  position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -192,13 +184,14 @@ th a:hover {
 }
 
 .hero-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   width: 100%;
   max-width: 800px;
   padding: 2rem;
+  text-align: center;
 }
 
 .hero-content h1,
