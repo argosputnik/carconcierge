@@ -39,6 +39,7 @@ html, body {
 main {
   flex: 1; /* Allows main to grow */
   width: 100%; /* Ensure main takes full width */
+  padding-top: 100px;
 }
 
 /* -------------------- Fixed Header -------------------- */
