@@ -177,36 +177,39 @@ th a:hover {
   display: flex;
   justify-content: center;
   align-items: center;
-  text-align: center;
-  padding: 2rem;
-  background-color: #f8f9fa;
   min-height: calc(100vh - 160px);
+  width: 100%;
+  background-color: #f8f9fa;
+  padding: 0;
 }
 
 .hero-content {
-  padding-top: 4rem;
-  padding-bottom: 4rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1.5rem;
-  max-width: 800px;
+  text-align: center;
   width: 100%;
+  max-width: 800px;
+  padding: 2rem;
 }
 
 .hero-content h1 {
   font-size: 2.5rem;
-  margin-bottom: 2rem;
+  color: #333;
+  margin-bottom: 3rem;
+  width: 100%;
 }
 
 .hero-content h3 {
   font-size: 1.5rem;
-  margin: 0;
+  color: #555;
+  margin: 0.5rem 0;
+  width: 100%;
 }
 
 .hero-content .btn {
-  margin-top: 2rem;
+  margin-top: 3rem;
   min-width: 200px;
   padding: 0.75rem 1.5rem;
   font-size: 1.1rem;
