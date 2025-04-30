@@ -1,0 +1,123 @@
+/* -------------------- Reset & Base Styles -------------------- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --primary-color: #e94e77;
+  --dark-bg: #333;
+  --dark-bg-hover: #444;
+  --text-light: #fff;
+  --text-dark: #212529;
+  --border-color: #dee2e6;
+  --focus-color: #86b7fe;
+  --focus-shadow: rgba(13, 110, 253, 0.25);
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.6;
+}
+
+/* -------------------- Fixed Layout Structure -------------------- */
+.page-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  /* CRITICAL: Add padding to push content away from FIXED header/footer */
+  padding-top: 60px;    /* Must match header height */
+  padding-bottom: 60px; /* Must match footer height */
+  /* position: relative; */ /* Not strictly needed if header/footer are fixed */
+}
+
+/* Main content container */
+main {
+  flex: 1; /* Allows main to grow */
+  width: 100%; /* Ensure main takes full width */
+}
+
+/* -------------------- Fixed Header -------------------- */
+header {
+  background: rgba(0, 0, 0, 0.9);
+  position: fixed;      /* Use fixed for simplicity */
+  top: 0;
+  left: 0; /* Add left: 0 for fixed positioning */
+  width: 100%;
+  height: 60px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+}
+
+/* -------------------- Fixed Footer -------------------- */
+footer {
+  background: var(--dark-bg);
+  color: var(--text-light);
+  position: fixed;      /* Use fixed for simplicity */
+  bottom: 0;
+  left: 0; /* Add left: 0 for fixed positioning */
+  width: 100%;
+  height: 60px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+/* ----- Simplified Hero Styles for Centering & Visibility ----- */
+
+/* Target the main element specifically when it has the no-padding class */
+main.no-padding {
+  padding: 0; /* Remove default padding from main */
+  margin: 0; /* Remove default margin from main */
+  /* Remove complex flex rules */
+}
+
+/* Hero section container */
+.hero {
+  width: 100%;
+  /* Add padding INSIDE the hero section for spacing */
+  padding: 40px 20px; /* Adjust 40px as needed for vertical spacing */
+  /* Core style for centering inline/inline-block children */
+  text-align: center;
+}
+
+/* Hero content block */
+.hero-content {
+  /* This block itself doesn't need centering if parent uses text-align */
+  /* But we can limit its width and center the block for better readability */
+  max-width: 800px;   /* Optional: Limit width */
+  margin: 0 auto;     /* Center the block if max-width is applied */
+  /* All children will inherit text-align: center from .hero */
+}
+
+.hero-content h1 {
+  font-size: 2.5rem;
+  color: var(--text-dark, #333);
+  margin-bottom: 1.5rem;
+}
+
+.hero-content h3 {
+  font-size: 1.5rem;
+  color: #555;
+  margin: 0.5rem 0;
+}
+
+.hero-content .btn {
+  margin-top: 2rem;
+  min-width: 200px;
+  padding: 0.75rem 1.5rem;
+  font-size: 1.1rem;
+  /* Ensure it behaves like inline-block to respect text-align */
+  display: inline-block;
+}
+
+/* --- Keep other styles (tables, responsive etc.) --- */
+/* ... */
