@@ -120,6 +120,12 @@ main.no-padding {
   display: inline-block;
 }
 
+
+/*----------------------Dashboards ---------------------- */
+.scrollable-content {
+   padding-top: 100px;
+   }
+
 /* -------------------- Table Styles -------------------- */
 .table-responsive {
   width: 100%;
