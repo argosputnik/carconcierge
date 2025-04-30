@@ -39,7 +39,11 @@ html, body {
 main {
   flex: 1; /* Allows main to grow */
   width: 100%; /* Ensure main takes full width */
-  padding-top: 100px;
+}
+
+/* Add a new class for pages that need top padding */
+.main-padded-top {
+  padding-top: 100px; /* Adjust value as needed, maybe slightly more than header height */
 }
 
 /* -------------------- Fixed Header -------------------- */
@@ -160,9 +164,6 @@ main.no-padding {
 
 
 /*----------------------Dashboards ---------------------- */
-.scrollable-content {
-   padding-top: 200px;
-   }
 
 /* -------------------- Table Styles -------------------- */
 .table-responsive {

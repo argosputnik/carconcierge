@@ -1,10 +1,12 @@
 {% extends 'main/base.html' %}
 {% block title %}Owner Dashboard{% endblock %}
-{% block main_class %}owner-dashboard{% endblock %}
+{# REMOVE the main_class block here #}
+{# {% block main_class %}owner-dashboard{% endblock %} #}
 
 {% block content %}
-<div class="main-content">
-  <div class="scrollable-content">
+<div class="main-content main-padded-top"> {# Add main-padded-top here #}
+  {# REMOVE the scrollable-content div #}
+  {# <div class="scrollable-content"> #}
     <h2 class="text-center mb-4">Welcome, {{ user.first_name }}!</h2>
 
     <div class="d-flex justify-content-center gap-3 mb-4">
@@ -15,287 +17,26 @@
     <div class="dashboard-section">
       <h3 class="mb-3">Recent Activity</h3>
       <div class="table-responsive">
-        <table class="table table-striped">
-          <thead class="table-dark">
-            <tr>
-              <th>
-                <a href="?sort=requested_at&dir={% if current_sort == 'requested_at' and current_direction == 'asc' %}desc{% else %}asc{% endif %}" class="text-white text-decoration-none">
-                  Request Date
-                  {% if current_sort == 'requested_at' %}
-                    <i class="bi bi-chevron-{% if current_direction == 'asc' %}up{% else %}down{% endif %}"></i>
-                  {% endif %}
-                </a>
-              </th>
-              <th>
-                <a href="?sort=customer__last_name&dir={% if current_sort == 'customer__last_name' and current_direction == 'asc' %}desc{% else %}asc{% endif %}" class="text-white text-decoration-none">
-                  Customer
-                  {% if current_sort == 'customer__last_name' %}
-                    <i class="bi bi-chevron-{% if current_direction == 'asc' %}up{% else %}down{% endif %}"></i>
-                  {% endif %}
-                </a>
-              </th>
-              <th>Status</th>
-              <th>
-                <a href="?sort=assigned_to&dir={% if current_sort == 'assigned_to' and current_direction == 'asc' %}desc{% else %}asc{% endif %}" class="text-white text-decoration-none">
-                  Assigned To
-                  {% if current_sort == 'assigned_to' %}
-                    <i class="bi bi-chevron-{% if current_direction == 'asc' %}up{% else %}down{% endif %}"></i>
-                  {% endif %}
-                </a>
-              </th>
-              <th>Description</th>
-              <th class="text-end">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for request in service_requests %}
-            <tr>
-              <td>{{ request.requested_at|date:"Y-m-d H:i" }}</td>
-              <td>{{ request.customer.first_name }} {{ request.customer.last_name }}</td>
-              <td>
-                <form method="post" action="{% url 'edit_service_request' request.id %}" class="status-form">
-                  {% csrf_token %}
-                  <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
-                    <option value="Pending" {% if request.status == "Pending" %}selected{% endif %}>Pending</option>
-                    <option value="In service" {% if request.status == "In service" %}selected{% endif %}>In service</option>
-                    <option value="Delivery" {% if request.status == "Delivery" %}selected{% endif %}>Delivery</option>
-                    <option value="Complete" {% if request.status == "Complete" %}selected{% endif %}>Complete</option>
-                    <option value="Waiting for Payment" {% if request.status == "Waiting for Payment" %}selected{% endif %}>Waiting for Payment</option>
-                  </select>
-                  <input type="hidden" name="update_status_only" value="true">
-                </form>
-              </td>
-              <td>{{ request.assigned_to }}</td>
-              <td class="text-truncate" style="max-width: 200px;">{{ request.description }}</td>
-              <td class="text-end">
-                <div class="action-buttons">
-                  <a href="{% url 'view_service_request' request.id %}" class="btn btn-sm btn-outline-primary">View</a>
-                  <a href="{% url 'edit_service_request' request.id %}" class="btn btn-sm btn-outline-secondary">Edit</a>
-                </div>
-                </td>
-              </tr>
-              {% empty %}
-              <tr>
-                <td colspan="6" class="text-center py-4">
-                  <div class="empty-state">
-                    <i class="bi bi-inbox fs-1 text-muted"></i>
-                    <p class="mt-2 mb-0">No service requests found</p>
-                  </div>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
+        {# ... your service requests table ... #}
       </div>
-      
-      <!-- Add this pagination section -->
-      <div class="pagination-container d-flex justify-content-center mt-3">
-        {% if service_requests.paginator.num_pages > 1 %}
-        <nav aria-label="Page navigation">
-          <ul class="pagination">
-            {% if service_requests.has_previous %}
-              <li class="page-item">
-                <a class="page-link" href="?page=1{% if current_sort %}&sort={{ current_sort }}{% endif %}{% if current_direction %}&dir={{ current_direction }}{% endif %}" aria-label="First">
-                  <span aria-hidden="true">&laquo;&laquo;</span>
-                </a>
-              </li>
-              <li class="page-item">
-                <a class="page-link" href="?page={{ service_requests.previous_page_number }}{% if current_sort %}&sort={{ current_sort }}{% endif %}{% if current_direction %}&dir={{ current_direction }}{% endif %}" aria-label="Previous">
-                  <span aria-hidden="true">&laquo;</span>
-                </a>
-              </li>
-            {% endif %}
+    </div>
 
-            {% for num in service_requests.paginator.page_range %}
-              {% if service_requests.number == num %}
-                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
-              {% elif num > service_requests.number|add:'-3' and num < service_requests.number|add:'3' %}
-                <li class="page-item">
-                  <a class="page-link" href="?page={{ num }}{% if current_sort %}&sort={{ current_sort }}{% endif %}{% if current_direction %}&dir={{ current_direction }}{% endif %}">{{ num }}</a>
-                </li>
-              {% endif %}
-            {% endfor %}
-
-            {% if service_requests.has_next %}
-              <li class="page-item">
-                <a class="page-link" href="?page={{ service_requests.next_page_number }}{% if current_sort %}&sort={{ current_sort }}{% endif %}{% if current_direction %}&dir={{ current_direction }}{% endif %}" aria-label="Next">
-                  <span aria-hidden="true">&raquo;</span>
-                </a>
-              </li>
-              <li class="page-item">
-                <a class="page-link" href="?page={{ service_requests.paginator.num_pages }}{% if current_sort %}&sort={{ current_sort }}{% endif %}{% if current_direction %}&dir={{ current_direction }}{% endif %}" aria-label="Last">
-                  <span aria-hidden="true">&raquo;&raquo;</span>
-                </a>
-              </li>
-            {% endif %}
-          </ul>
-        </nav>
-        {% endif %}
-      </div>
+    <!-- Pagination for Service Requests -->
+    <div class="pagination-container d-flex justify-content-center mt-3">
+      {# ... pagination code ... #}
     </div>
 
     <!-- Invoices Table -->
     <div class="dashboard-section">
       <h3 class="mb-3">Invoices</h3>
       <div class="table-responsive">
-        <table class="table table-striped align-middle">
-          <thead class="table-dark">
-            <tr>
-              <th>
-                <a href="?sort=id&dir={% if current_sort == 'id' and current_direction == 'asc' %}desc{% else %}asc{% endif %}" class="text-white text-decoration-none">
-                  ID
-                  {% if current_sort == 'id' %}
-                    <i class="bi bi-chevron-{% if current_direction == 'asc' %}up{% else %}down{% endif %}"></i>
-                  {% endif %}
-                </a>
-              </th>
-              <th>
-                <a href="?sort=invoice_date&dir={% if current_sort == 'invoice_date' and current_direction == 'asc' %}desc{% else %}asc{% endif %}" class="text-white text-decoration-none">
-                  Date
-                  {% if current_sort == 'invoice_date' %}
-                    <i class="bi bi-chevron-{% if current_direction == 'asc' %}up{% else %}down{% endif %}"></i>
-                  {% endif %}
-                </a>
-              </th>
-              <th>
-                <a href="?sort=last_name&dir={% if current_sort == 'last_name' and current_direction == 'asc' %}desc{% else %}asc{% endif %}" class="text-white text-decoration-none">
-                  Customer
-                  {% if current_sort == 'last_name' %}
-                    <i class="bi bi-chevron-{% if current_direction == 'asc' %}up{% else %}down{% endif %}"></i>
-                  {% endif %}
-                </a>
-              </th>
-              <th>Price</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for invoice in invoices1 %}
-            <tr>
-              <form method="post" action="{% url 'edit_invoice' invoice.id %}">
-                {% csrf_token %}
-                <td>{{ invoice.id }}</td>
-                <td>{{ invoice.invoice_date|date:"Y-m-d H:i" }}</td>
-                <td>{{ invoice.first_name }} {{ invoice.last_name }}</td>
-                <td>
-                  <div class="price-input-group">
-                    <input type="text" name="price" value="{{ invoice.price }}" class="form-control form-control-sm" placeholder="0.00">
-                    <select name="currency" class="form-select form-select-sm">
-                      <option value="GEL" {% if invoice.currency == "GEL" %}selected{% endif %}>GEL</option>
-                      <option value="USD" {% if invoice.currency == "USD" %}selected{% endif %}>USD</option>
-                      <option value="EUR" {% if invoice.currency == "EUR" %}selected{% endif %}>EUR</option>
-                    </select>
-                  </div>
-                </td>
-                <td>
-                  <select name="payment_status" class="form-select form-select-sm">
-                    <option value="Unpaid" {% if invoice.payment_status == "Unpaid" %}selected{% endif %}>Unpaid</option>
-                    <option value="Paid" {% if invoice.payment_status == "Paid" %}selected{% endif %}>Paid</option>
-                  </select>
-                </td>
-                <td>
-                  <div class="action-buttons">
-                    <a href="{% url 'view_invoice' 1 invoice.id %}" class="btn btn-sm btn-outline-info">View</a>
-                    <button type="submit" class="btn btn-sm btn-outline-success">Update</button>
-                  </div>
-                </td>
-              </form>
-            </tr>
-            {% endfor %}
-
-            {% for invoice in invoices2 %}
-            <tr>
-              <form method="post" action="{% url 'edit_invoice' invoice.id %}">
-                {% csrf_token %}
-                <td>{{ invoice.id }}</td>
-                <td>{{ invoice.invoice_date|date:"Y-m-d H:i" }}</td>
-                <td>{{ invoice.first_name }} {{ invoice.last_name }}</td>
-                <td>
-                  <div class="price-input-group">
-                    <input type="text" name="price" value="{{ invoice.price }}" class="form-control form-control-sm" placeholder="0.00">
-                    <select name="currency" class="form-select form-select-sm">
-                      <option value="GEL" {% if invoice.currency == "GEL" %}selected{% endif %}>GEL</option>
-                      <option value="USD" {% if invoice.currency == "USD" %}selected{% endif %}>USD</option>
-                      <option value="EUR" {% if invoice.currency == "EUR" %}selected{% endif %}>EUR</option>
-                    </select>
-                  </div>
-                </td>
-                <td>
-                  <select name="payment_status" class="form-select form-select-sm">
-                    <option value="Unpaid" {% if invoice.payment_status == "Unpaid" %}selected{% endif %}>Unpaid</option>
-                    <option value="Paid" {% if invoice.payment_status == "Paid" %}selected{% endif %}>Paid</option>
-                  </select>
-                </td>
-                <td>
-                  <div class="action-buttons">
-                    <a href="{% url 'view_invoice' 2 invoice.id %}" class="btn btn-sm btn-outline-info">View</a>
-                    <button type="submit" class="btn btn-sm btn-outline-success">Update</button>
-                  </div>
-                </td>
-              </form>
-            </tr>
-            {% endfor %}
-
-            {% if not invoices1 and not invoices2 %}
-            <tr>
-              <td colspan="6" class="text-center py-4">
-                <div class="empty-state">
-                  <i class="bi bi-receipt fs-1 text-muted"></i>
-                  <p class="mt-2 mb-0">No invoices found</p>
-                </div>
-              </td>
-            </tr>
-            {% endif %}
-          </tbody>
-        </table>
+        {# ... your invoices table ... #}
       </div>
     </div>
-    <!-- Add pagination controls for invoices -->
+    <!-- Pagination for Invoices -->
     <div class="pagination-container d-flex justify-content-center mt-3">
-      {% if invoices1.paginator.num_pages > 1 %}
-      <nav aria-label="Page navigation">
-        <ul class="pagination">
-          {% if invoices1.has_previous %}
-            <li class="page-item">
-              <a class="page-link" href="?inv_page=1" aria-label="First">
-                <span aria-hidden="true">&laquo;&laquo;</span>
-              </a>
-            </li>
-            <li class="page-item">
-              <a class="page-link" href="?inv_page={{ invoices1.previous_page_number }}" aria-label="Previous">
-                <span aria-hidden="true">&laquo;</span>
-              </a>
-            </li>
-          {% endif %}
-
-          {% for num in invoices1.paginator.page_range %}
-            {% if invoices1.number == num %}
-              <li class="page-item active"><span class="page-link">{{ num }}</span></li>
-            {% elif num > invoices1.number|add:'-3' and num < invoices1.number|add:'3' %}
-              <li class="page-item">
-                <a class="page-link" href="?inv_page={{ num }}">{{ num }}</a>
-              </li>
-            {% endif %}
-          {% endfor %}
-
-          {% if invoices1.has_next %}
-            <li class="page-item">
-              <a class="page-link" href="?inv_page={{ invoices1.next_page_number }}" aria-label="Next">
-                <span aria-hidden="true">&raquo;</span>
-              </a>
-            </li>
-            <li class="page-item">
-              <a class="page-link" href="?inv_page={{ invoices1.paginator.num_pages }}" aria-label="Last">
-                <span aria-hidden="true">&raquo;&raquo;</span>
-              </a>
-            </li>
-          {% endif %}
-        </ul>
-      </nav>
-      {% endif %}
+      {# ... invoice pagination code ... #}
     </div>
+  {# Close the main-content div #}
   </div>
-</div>
 {% endblock %}
