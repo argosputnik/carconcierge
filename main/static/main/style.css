@@ -80,6 +80,11 @@ footer {
   justify-content: center;
 }
 
+
+hero-content   {
+   padding-top 100px;
+   }
+
 /* -------------------- Table Styles -------------------- */
 .table-responsive {
   width: 100%;
