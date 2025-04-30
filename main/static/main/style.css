@@ -172,38 +172,44 @@ th a:hover {
   padding-right: 0.25rem;
 }
 
+/* Remove any existing hero styles and replace with these */
 
-/* -------------------- Hero Section Fix -------------------- */
+/* Fix for main content area */
 .no-padding main {
-  padding: 0 !important;
-  margin: 0 !important;
-  height: calc(100vh - 120px); /* Viewport height minus header and footer */
+  padding: 0;
+  margin: 0;
+  min-height: calc(100vh - 120px); /* 100vh minus header (60px) and footer (60px) */
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
 }
 
+/* Hero section container */
 .hero {
+  width: 100%;
+  max-width: 1400px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  height: 100%;
-  background: #f8f9fa;
-  padding: 20px;
+  text-align: center;
 }
 
+/* Hero content styling */
 .hero-content {
-  text-align: center;
+  width: 100%;
   max-width: 800px;
   padding: 2rem;
+  margin: 0 auto;
 }
 
 .hero-content h1 {
   font-size: 2.5rem;
   color: #333;
   margin-bottom: 1.5rem;
+  width: 100%;
 }
 
 .hero-content h3 {
