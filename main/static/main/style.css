@@ -120,6 +120,43 @@ main.no-padding {
   display: inline-block;
 }
 
+/* -------------------- Dropdown Menu -------------------- */
+.dropdown-content {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: #333;
+  min-width: 160px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1001;
+  text-align: left;
+}
+
+.dropdown-content a,
+.dropdown-content .logout-link {
+  color: #fff;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+  background: none;
+  border: none;
+  text-align: left;
+  width: 100%;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.dropdown-content a:hover,
+.dropdown-content .logout-link:hover {
+  background-color: #444;
+}
+
+.nav-list .dropdown:hover .dropdown-content {
+  display: block;
+}
+
+
 
 /*----------------------Dashboards ---------------------- */
 .scrollable-content {
