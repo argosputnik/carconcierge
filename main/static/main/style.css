@@ -43,7 +43,7 @@ main {
 
 /* Add a new class for pages that need top padding */
 .main-padded-top {
-  padding-top: 200px; /* Adjust value as needed, maybe slightly more than header height */
+  padding-top: 100px; /* Adjust value as needed, maybe slightly more than header height */
   padding-bottom: 20px;
 }
 
