@@ -180,7 +180,6 @@ th a:hover {
   min-height: calc(100vh - 160px);
   width: 100%;
   background-color: #f8f9fa;
-  padding: 0;
 }
 
 .hero-content {
@@ -188,24 +187,28 @@ th a:hover {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  text-align: center;
   width: 100%;
   max-width: 800px;
   padding: 2rem;
+}
+
+.hero-content h1,
+.hero-content h3 {
+  text-align: center;
+  width: 100%;
+  display: block;
 }
 
 .hero-content h1 {
   font-size: 2.5rem;
   color: #333;
   margin-bottom: 3rem;
-  width: 100%;
 }
 
 .hero-content h3 {
   font-size: 1.5rem;
   color: #555;
   margin: 0.5rem 0;
-  width: 100%;
 }
 
 .hero-content .btn {
