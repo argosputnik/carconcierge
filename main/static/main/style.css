@@ -147,23 +147,27 @@ th a:hover {
 .price-input-group {
   display: flex;
   align-items: center;
-  gap: 5px;
-  max-width: 140px; /* Reduced from 200px */
+  gap: 2px;
+  max-width: 110px;
 }
 
 .price-input-group input {
-  width: 70px; /* Reduced from 100px */
+  width: 55px;
 }
 
 .price-input-group select {
-  width: 60px; /* Reduced from 70px */
+  width: 50px;
 }
 
-/* Add this to ensure the form controls stay compact */
 .price-input-group .form-control-sm,
 .price-input-group .form-select-sm {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.875rem;
+  padding: 0.25rem;
+  font-size: 0.75rem;
   min-height: 0;
-  height: 31px;
+  height: 28px;
+}
+
+.price-input-group select.form-select-sm {
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
 }
