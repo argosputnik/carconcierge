@@ -1,10 +1,25 @@
-{% extends 'base.html' %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Car Concierge{% endblock %}</title>
 
-{% block title %}Car Concierge{% endblock %}
+  {# ... your CSS and JS links ... #}
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="{% static 'main/style.css' %}" />
+</head>
 
-{% block content %}
-  <main class="flex-fill {% block main_class %}{% endblock %}"> {# Revert main_class block #}
-    {% block content %}{% endblock %}
+<body>
+  <header class="fixed-top">
+    {# ... your header content ... #}
+  </header>
+
+  <main class="flex-fill {% block main_class %}{% endblock %}">
+    {% block content %}{% endblock %} {# This is the block for page-specific content #}
 
     {% if messages %}
       <div class="container mt-3">
@@ -16,4 +31,12 @@
       </div>
     {% endif %}
   </main>
-{% endblock %}
+
+  <footer class="fixed-bottom bg-dark text-white text-center py-3">
+    {# ... your footer content ... #}
+  </footer>
+
+  {% block scripts %}{% endblock %}
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+</body>
+</html>
