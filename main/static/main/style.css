@@ -178,35 +178,23 @@ th a:hover {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: calc(100vh - 120px); /* Adjust for sticky header/footer */
+  height: 100vh;
   width: 100%;
   background-color: #f8f9fa;
 }
 
 .hero-content {
-  text-align: center;
-  width: 100%;
+  text-align: center; !important
   max-width: 800px;
   padding: 2rem;
 }
 
 .hero-content h1,
 .hero-content h3 {
-  text-align: center;
+  text-align: center; !important
   width: 100%;
   display: block;
-}
-
-.hero-content h1 {
-  font-size: 2.5rem;
   color: #333;
-  margin-bottom: 3rem;
-}
-
-.hero-content h3 {
-  font-size: 1.5rem;
-  color: #555;
-  margin: 0.5rem 0;
 }
 
 .hero-content .btn {
