@@ -81,9 +81,17 @@ footer {
 }
 
 
-hero-content   {
+.hero-content   {
+   text-align: center;
    padding-top 100px;
    }
+
+h1   {
+   padding-bottom: 5px;
+   }
+h3   {
+   padding-bottom: 5px;
+   {
 
 /* -------------------- Table Styles -------------------- */
 .table-responsive {
