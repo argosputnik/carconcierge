@@ -6,24 +6,172 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Car Concierge{% endblock %}</title>
 
-  {# ... your CSS and JS links ... #}
+  <!-- Leaflet CSS/JS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+  <!-- Bootstrap CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+  <!-- Your custom CSS -->
   <link rel="stylesheet" href="{% static 'main/style.css' %}" />
+
+  {# Include any extra CSS blocks here if needed by child templates #}
+  {% block extra_css %}{% endblock %}
 </head>
 
 <body>
+  {# Use a wrapper div if you are using padding-top/bottom on it in CSS #}
+  {# Otherwise, padding on main is often sufficient for fixed headers/footers #}
+  {# <div class="page-wrapper"> #}
+
+  <!-- Fixed Header -->
   <header class="fixed-top">
-    {# ... your header content ... #}
+    <nav class="navbar navbar-expand-md navbar-dark bg-dark">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="{% url 'home' %}">Car Concierge</a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarSupportedContent"
+          aria-controls="navbarSupportedContent"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div
+          class="collapse navbar-collapse"
+          id="navbarSupportedContent"
+        >
+          <ul class="navbar-nav me-auto mb-2 mb-md-0">
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'home' %}">Home</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'about' %}">About</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'contact' %}">Contact</a>
+            </li>
+
+            {% if user.is_authenticated %}
+              <li class="nav-item dropdown">
+                <a
+                  class="nav-link dropdown-toggle"
+                  href="#"
+                  id="accountDropdown"
+                  role="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                >
+                  {{ user.first_name|default:"Account" }} {# Use default filter in case first_name is empty #}
+                </a>
+                <ul
+                  class="dropdown-menu"
+                  aria-labelledby="accountDropdown"
+                >
+                  <li>
+                    <a
+                      class="dropdown-item"
+                      href="{% url 'account_info' %}"
+                    >My Account</a>
+                  </li>
+
+                  {# Conditionally display links based on user roles #}
+                  {% comment %}
+                  You might check user.role directly if your User model has a 'role' field
+                  or iterate through groups as you had before if using Django's Group model.
+                  Below is an example using user.role for clarity, adjust based on your User model.
+                  {% endcomment %}
+
+                  {# Example using user.role (adjust to your actual implementation) #}
+                  {% if user.role == "customer" %}
+                    <li>
+                      <a
+                        class="dropdown-item"
+                        href="{% url 'my_cars' %}"
+                      >My Cars</a>
+                    </li>
+                  {% endif %}
+
+                  {% if user.role == "concierge" %}
+                    <li>
+                      <a
+                        class="dropdown-item"
+                        href="{% url 'concierge_dashboard' %}"
+                      >View Concierge Dashboard</a>
+                    </li>
+                    {# Add other concierge-specific links here #}
+                    {# <li><a class="dropdown-item" href="{% url 'add_new_concierge_item' %}">Add New Item</a></li> #}
+                  {% endif %}
+
+                  {% if user.role == "owner" %}
+                    <li>
+                      <a
+                        class="dropdown-item"
+                        href="{% url 'owner_dashboard' %}"
+                      >View Owner Dashboard</a>
+                    </li>
+                    {# Add other owner-specific links here #}
+                    {# <li><a class="dropdown-item" href="{% url 'add_new_owner_item' %}">Add New Item</a></li> #}
+                  {% endif %}
+
+                  {% if user.role == "dealer" %}
+                    <li>
+                      <a
+                        class="dropdown-item"
+                        href="{% url 'dealer_dashboard' %}"
+                      >View Dealer Dashboard</a>
+                    </li>
+                    {# Add other dealer-specific links here #}
+                    {# <li><a class="dropdown-item" href="{% url 'add_new_dealer_item' %}">Add New Item</a></li> #}
+                  {% endif %}
+
+
+                  <li><hr class="dropdown-divider"></li>
+                  <li>
+                    <form method="POST" action="{% url 'logout' %}">
+                      {% csrf_token %}
+                      <button
+                        type="submit"
+                        class="dropdown-item"
+                      >Logout</button>
+                    </form>
+                  </li>
+                </ul>
+              </li>
+            {% else %}
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'login' %}">
+                  Login
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'signup' %}">
+                  Sign Up
+                </a>
+              </li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+    </nav>
   </header>
 
+  <!-- Scrollable Content Area -->
   <main class="flex-fill {% block main_class %}{% endblock %}">
-    {% block content %}{% endblock %} {# This is the block for page-specific content #}
+    {# This is the main content block for individual pages to fill #}
+    {% block content %}{% endblock %}
 
     {% if messages %}
       <div class="container mt-3">
         {% for message in messages %}
+          {# Adjust alert class based on message tag if needed #}
           <div class="alert alert-success" role="alert">
             {{ message }}
           </div>
@@ -32,11 +180,21 @@
     {% endif %}
   </main>
 
+  {# If you used <div class="page-wrapper"> above, close it here #}
+  {# </div> #}
+
+  <!-- Fixed Footer -->
   <footer class="fixed-bottom bg-dark text-white text-center py-3">
-    {# ... your footer content ... #}
+    <p>&copy; 2025 Car Concierge. All rights reserved.</p>
   </footer>
 
+  <!-- Bootstrap JS and other scripts -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+    crossorigin="anonymous"
+  ></script>
+
+  {# Include any extra JS blocks here if needed by child templates #}
   {% block scripts %}{% endblock %}
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 </body>
 </html>
