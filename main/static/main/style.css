@@ -174,27 +174,28 @@ th a:hover {
 
 /* -------------------- Hero Section Styles -------------------- */
 .hero {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  width: 100%;
-  background-color: #f8f9fa;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 100vh !important;
+  width: 100vw !important;
+  background: #f8f9fa !important;
 }
 
 .hero-content {
-  text-align: center; !important
-  max-width: 800px;
-  padding: 2rem;
+  text-align: center !important;
+  margin: 0 auto !important;
+  width: auto !important;
+  max-width: 800px !important;
 }
 
 .hero-content h1,
 .hero-content h3 {
-  text-align: center; !important
-  width: 100%;
-  display: block;
-  color: #333;
+  text-align: center !important;
+  margin: 0 auto !important;
+  width: 100% !important;
+  display: block !important;
 }
 
 .hero-content .btn {
