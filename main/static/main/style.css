@@ -176,46 +176,52 @@ th a:hover {
   padding-right: 0.25rem;
 }
 
-
 /* ----- Updated Hero Styles ----- */
 
 /* Target the main element specifically when it has the no-padding class */
 main.no-padding {
-  padding: 0; /* Remove default padding from main */
-  margin: 0; /* Remove default margin from main */
-  display: flex; /* Use flexbox to center its child */
-  align-items: center; /* Vertically center the child (.hero) */
-  justify-content: center; /* Horizontally center the child (.hero) */
-  /* min-height: 100%; */ /* Let flex: 1 handle height distribution */
-  /* The actual height available is determined by .page-wrapper's flex properties
-     and its padding-top/padding-bottom */
+  padding: 0; /* Keep removal of default padding from main */
+  margin: 0; /* Keep removal of default margin from main */
+  display: flex;          /* Use flexbox */
+  flex-direction: column; /* Stack children vertically */
+  /* REMOVE align-items: center; */ /* Don't vertically center the .hero section itself */
+  /* Keep justify-content: center; ONLY if .hero max-width < main width */
+  /* Let's remove it for simplicity, as .hero has width: 100% */
 }
 
 /* Hero section container */
 .hero {
   width: 100%; /* Take full width of its container (main) */
   max-width: 1400px; /* Optional: limit max width */
-  padding: 20px; /* Padding inside the hero section */
+  margin-left: auto;  /* Center the hero block if max-width is applied */
+  margin-right: auto; /* Center the hero block if max-width is applied */
+  padding: 40px 20px; /* Add sufficient top/bottom padding inside the hero section */
+                      /* Increase 40px if more space is needed below the header */
   display: flex; /* Use flexbox for its content */
   flex-direction: column; /* Stack content vertically */
-  align-items: center; /* Horizontally center content */
-  justify-content: center; /* Vertically center content */
-  text-align: center; /* Center text within child elements */
+  align-items: center; /* Horizontally center the .hero-content block */
+  justify-content: center; /* Vertically center content within the .hero section */
+  text-align: center; /* Center text within child elements (h1, h3, a.btn) */
+  flex-grow: 1; /* Allow hero to grow and take available space in main */
+  /* Optional: Calculate min-height to fill space between header/footer */
+  min-height: calc(100vh - 60px - 60px - 80px); /* vh - header - footer - hero internal padding (40*2) */
+                                                /* Adjust 120px if header/footer heights change */
+                                                /* Adjust 80px if hero padding changes */
 }
 
 /* Hero content styling */
 .hero-content {
-  /* width: 100%; */ /* Not strictly needed as parent aligns it */
+  /* width: 100%; */ /* Not needed as parent align-items centers it */
   max-width: 800px; /* Limit max width of the text block */
-  padding: 2rem; /* Padding around the text/button */
-  /* margin: 0 auto; */ /* Not needed, parent flexbox handles centering */
+  /* Padding inside .hero-content might be redundant if .hero padding suffices */
+  /* You can keep or remove based on desired spacing */
+  /* padding: 2rem; */
 }
 
 .hero-content h1 {
   font-size: 2.5rem;
-  color: #333;
+  color: #333; /* Use text-dark variable? var(--text-dark) */
   margin-bottom: 1.5rem;
-  /* width: 100%; */ /* Not needed, block element */
 }
 
 .hero-content h3 {
