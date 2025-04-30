@@ -71,6 +71,7 @@ footer {
 }
 
 
+
 /* ----- Simplified Hero Styles for Centering & Visibility ----- */
 
 /* Target the main element specifically when it has the no-padding class */
@@ -119,5 +120,99 @@ main.no-padding {
   display: inline-block;
 }
 
-/* --- Keep other styles (tables, responsive etc.) --- */
-/* ... */
+/* -------------------- Table Styles -------------------- */
+.table-responsive {
+  width: 100%;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+}
+
+.mb-3 {
+  text-align: center;
+  }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px;
+}
+
+/* Style for sortable headers */
+th a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+th a:hover {
+    text-decoration: none !important;
+}
+
+/* Style for sort icons */
+.bi-chevron-up, .bi-chevron-down {
+    font-size: 0.8rem;
+}
+
+
+/* -------------------- Responsive Adjustments -------------------- */
+@media (max-width: 768px) {
+  .page-wrapper {
+    padding-bottom: 80px; /* Extra space for mobile */
+  }
+
+  .main-content {
+    padding: 0 15px;
+  }
+
+  th, td {
+    padding: 8px 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content {
+    padding: 0 10px;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .text-truncate {
+    max-width: 150px !important;
+  }
+}
+
+/* Update the price input group styles */
+.price-input-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 110px;
+}
+
+.price-input-group input {
+  width: 55px;
+}
+
+.price-input-group select {
+  width: 50px;
+}
+
+.price-input-group .form-control-sm,
+.price-input-group .form-select-sm {
+  padding: 0.25rem;
+  font-size: 0.75rem;
+  min-height: 0;
+  height: 28px;
+}
+
+.price-input-group select.form-select-sm {
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+}
+
