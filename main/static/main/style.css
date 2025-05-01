@@ -166,6 +166,28 @@ main.no-padding {
 
 /*----------------------Dashboards ---------------------- */
 
+
+/* Ensure the dropdown submenu container is positioned relative 
+   so that the nested menu can be positioned absolutely relative to it */
+.dropdown-submenu {
+  position: relative;
+}
+
+/* Position the nested dropdown menu to the right of the parent */
+.dropdown-submenu > .dropdown-menu {
+  top: 0; 
+  left: 100%;     /* Position it to the right */
+  margin-top: -1px;  /* Adjust if needed for visual alignment */
+  /* Optionally, you can add some z-index to ensure it appears on top */
+  z-index: 1050;
+}
+
+/* When the submenu is toggled to show via the custom 'show' class, display it */
+.dropdown-menu.show {
+  display: block;
+}
+
+
 /* -------------------- Table Styles -------------------- */
 .table-responsive {
   width: 100%;
