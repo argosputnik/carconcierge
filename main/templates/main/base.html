@@ -8,7 +8,6 @@
 
   <!-- Leaflet CSS/JS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
   <!-- Bootstrap CSS -->
   <link
@@ -179,6 +178,7 @@
   ></script>
 
   {# Include any extra JS blocks here if needed by child templates #}
-  {% block scripts %}{% endblock %}
+{% block scripts %}{% endblock %}
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 </body>
 </html>
