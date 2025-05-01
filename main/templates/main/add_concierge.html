@@ -3,34 +3,35 @@
 
 {% block content %}
 <div class="main-content main-padded-top">
-<div class="container mt-5">
-  <h2 class="mb-4">Add New Concierge</h2>
+  <div class="container mt-5">
+    <h2 class="mb-4">Add New Concierge</h2>
 
-  <div class="d-flex justify-content-center gap-3 mb-4">
-    {% include 'main/_dashboard_buttons.html' %}
-  </div>
+    <div class="d-flex justify-content-center gap-3 mb-4">
+      {% include 'main/_dashboard_buttons.html' %}
+    </div>
 
-  <form method="post">
-    {% csrf_token %}
+    <form method="post">
+      {% csrf_token %}
 
-    {% if form.non_field_errors %}
-      <div class="alert alert-danger">{{ form.non_field_errors }}</div>
-    {% endif %}
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+      {% endif %}
 
-    {% for field in form %}
-      <div class="mb-3">
-        {{ field.label_tag }}
-        {{ field }}
-        {% if field.errors %}
-          <div class="text-danger small">{{ field.errors|striptags }}</div>
-        {% endif %}
+      {% for field in form %}
+        <div class="mb-3">
+          {{ field.label_tag }}
+          {{ field }}
+          {% if field.errors %}
+            <div class="text-danger small">{{ field.errors|striptags }}</div>
+          {% endif %}
+        </div>
+      {% endfor %}
+
+      <div class="text-center">
+        <button type="submit" class="btn btn-dark">Add Concierge</button>
+        <a href="{% url 'view_concierges' %}" class="btn btn-dark">Cancel</a>
       </div>
-    {% endfor %}
-    <div class="text-align">
-    <button type="submit" class="btn btn-dark">Add Concierge</button>
-    <a href="{% url 'view_concierges' %}" class="btn btn-dark">Cancel</a>
-  </form>
-</div>
+    </form>
+  </div>
 </div>
 {% endblock %}
-
