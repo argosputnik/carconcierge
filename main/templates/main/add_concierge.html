@@ -2,6 +2,7 @@
 {% block title %}Add Concierge{% endblock %}
 
 {% block content %}
+<div class="main-content main-padded-top">
 <div class="container mt-5">
   <h2 class="mb-4">Add New Concierge</h2>
 
@@ -25,10 +26,11 @@
         {% endif %}
       </div>
     {% endfor %}
-
-    <button type="submit" class="btn btn-primary">Add Concierge</button>
-    <a href="{% url 'view_concierges' %}" class="btn btn-secondary">Cancel</a>
+    <div class="text-align">
+    <button type="submit" class="btn btn-dark">Add Concierge</button>
+    <a href="{% url 'view_concierges' %}" class="btn btn-dark">Cancel</a>
   </form>
+</div>
 </div>
 {% endblock %}
 

@@ -188,6 +188,10 @@ main.no-padding {
 }
 
 
+.mb-4   {
+   text-align: center;
+   }
+
 /* -------------------- Table Styles -------------------- */
 .table-responsive {
   width: 100%;

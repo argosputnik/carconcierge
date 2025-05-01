@@ -2,6 +2,7 @@
 {% block title %}Add Owner{% endblock %}
 
 {% block content %}
+<div class="main-content main-padded-top">
 <div class="container mt-4">
 
   <h2>Add New Owner</h2>
@@ -23,7 +24,9 @@
         {% endif %}
       </div>
     {% endfor %}
+    <div class="text-center">
     <button type="submit" class="btn btn-dark">Create Owner</button>
+  </div>
   </form>
 </div>
 {% endblock %}
