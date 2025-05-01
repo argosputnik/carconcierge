@@ -184,37 +184,48 @@
 document.addEventListener('DOMContentLoaded', function () {
   console.log('Nested dropdown script loaded.');
 
-  // Attach click handler only to nested toggles inside a dropdown-submenu.
-  // Using a child combinator to ensure we target the correct anchor.
+  // Attach click handler to nested toggles in .dropdown-submenu
   document.querySelectorAll('.dropdown-submenu > a.dropdown-toggle').forEach(function (toggle) {
     toggle.addEventListener('click', function (e) {
-      // Prevent the default action and stop the click from bubbling up to the outer dropdown.
+      // Prevent the default action and stop propagation to keep Bootstrap's outer menu open
       e.preventDefault();
       e.stopPropagation();
       console.log('Nested dropdown toggle clicked:', this);
 
-      // Find the nested submenu:
+      // Get the current submenu (the next sibling element)
       const submenu = this.nextElementSibling;
+
+      // First, hide any other open submenus within the same parent dropdown-menu:
+      const parentMenu = this.closest('.dropdown-menu');
+      if (parentMenu) {
+        // Find all inner submenus currently visible (with the "show" class) except this one.
+        parentMenu.querySelectorAll('.dropdown-menu.show').forEach(function (openMenu) {
+          if (openMenu !== submenu) {
+            openMenu.classList.remove('show');
+            console.log('Closed an open sibling submenu.');
+          }
+        });
+      }
+      
+      // Then toggle the current submenu's visibility.
       if (submenu) {
-        // Toggle the "show" class on the nested submenu.
         submenu.classList.toggle('show');
-        console.log('Toggled nested submenu. Now visible:', submenu.classList.contains('show'));
+        console.log('Toggled submenu. Now visible:', submenu.classList.contains('show'));
       }
     });
   });
 
-  // Optional: Prevent clicks inside any dropdown-menu from closing the menu
-  document.querySelectorAll('.dropdown-menu').forEach(function (menu) {
-    menu.addEventListener('click', function (e) {
-      // Stop propagation so that clicks within an open menu don’t automatically close it.
-      e.stopPropagation();
+  // Optionally, close any open nested submenus when clicking anywhere outside the dropdown
+  document.addEventListener('click', function () {
+    document.querySelectorAll('.dropdown-menu .dropdown-menu.show').forEach(function (openSubmenu) {
+      openSubmenu.classList.remove('show');
     });
   });
 
-  // When clicking anywhere in the document (outside a nested submenu), close any open nested submenus.
-  document.addEventListener('click', function () {
-    document.querySelectorAll('.dropdown-submenu .dropdown-menu.show').forEach(function (openSubmenu) {
-      openSubmenu.classList.remove('show');
+  // Prevent inner clicks from closing the entire dropdown menu if necessary (optional)
+  document.querySelectorAll('.dropdown-menu').forEach(function (menu) {
+    menu.addEventListener('click', function (e) {
+      e.stopPropagation();
     });
   });
 });
