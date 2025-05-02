@@ -281,15 +281,24 @@ document.addEventListener("DOMContentLoaded", function() {
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 });
     } // End of if (role === "concierge")
 
-    // Optional: Initial fetch (Nested comment REMOVED)
-    /*
-    fetch("{% url 'service_request_location' service_request.id %}", { credentials: "same-origin" })
-      .then(r => { if (!r.ok) throw new Error(`Initial fetch failed: ${r.status}`); return r.json(); })
-      .then(data => { console.log("Initial location fetch:", data); if (data.lat && data.lng && !conciergeLocationMarker) { /* Handle fetched data if needed */ } }) // <<< REMOVED INNER COMMENT
-      .catch(error => { console.error("Initial location fetch error:", error); });
-    */
+    // Optional: Initial fetch
+    // Using single-line comments instead of block comments to avoid nesting issues
+    // fetch("{% url 'service_request_location' service_request.id %}", { credentials: "same-origin" })
+    //   .then(r => { if (!r.ok) throw new Error(`Initial fetch failed: ${r.status}`); return r.json(); })
+    //   .then(data => { console.log("Initial location fetch:", data); if (data.lat && data.lng && !conciergeLocationMarker) { // Handle fetched data if needed } })
+    //   .catch(error => { console.error("Initial location fetch error:", error); });
 
-  } else if (status !== "Delivery") {
-    console.log("Location tracking not active (Status != Delivery).");
-  } else if (!share) {
-    
+   } else if (status !== "Delivery") {
+     console.log("Location tracking is not active for this request status.");
+   } else if (!share) {
+     console.log("Location sharing is not enabled for this request.");
+   }
+         
+   // Invalidate map size on tab/accordion changes if map is in a hidden container initially
+   // This is important if the map div is inside a collapsible Bootstrap element
+   requestAnimationFrame(() => {
+     map.invalidateSize();
+   });
+ });     
+ </script>
+ {% endblock %}
