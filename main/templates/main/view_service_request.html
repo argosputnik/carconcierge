@@ -56,11 +56,12 @@
     <div class="card-body">
       <div
         id="map"
-        data-address="{{ service_request.pickup_location|escapejs }}"
+        data-address="{{ service_request.pickup_location|escapejs }}" {# Use escapejs for data attributes containing potentially complex strings #}
         data-share="{{ service_request.share_location|yesno:'true,false' }}"
         data-status="{{ service_request.status }}"
         style="height:500px; border:1px solid #ccc;"
       ></div>
+      {# Message element to show geocoding status #}
       <div id="map-message" class="alert alert-info mt-2" style="display:none;">Finding location...</div>
     </div>
   </div>
@@ -91,7 +92,7 @@
        </a>
     {% endif %}
 
-    {# Check permission before showing edit button - FIXED LIST SYNTAX #}
+    {# Check permission before showing edit button #}
     {% if request.user == service_request.customer or request.user.role == 'concierge' or request.user.role == 'dealer' or request.user.role == 'owner' %}
       <a href="{% url 'edit_service_request' service_request.id %}" class="btn btn-primary">
         Edit
@@ -99,27 +100,29 @@
     {% endif %}
   </div>
 </div>
-{% endblock %}
+{% endblock %} {# End of block content #}
 
 
 {% block scripts %}
 <script>
 document.addEventListener("DOMContentLoaded", function() {
   const mapEl = document.getElementById("map");
-  const messageEl = document.getElementById("map-message"); // Changed ID
+  const messageEl = document.getElementById("map-message");
   if (!mapEl) return; // Exit if map element doesn't exist
 
-  const address = mapEl.dataset.address; // No need for escapejs here if using dataset
+  // Get data from attributes
+  const address = mapEl.dataset.address; // Raw address string
   const share   = mapEl.dataset.share === "true";
   const status  = mapEl.dataset.status;
-  const role    = "{{ request.user.role|escapejs }}"; // Keep escapejs for JS string
+  const role    = "{{ request.user.role|escapejs }}"; // Role needs escaping for JS
 
   console.log("Pickup address from data attribute:", address);
 
   // 1) Initialize map with a basic world view
   const map = L.map("map").setView([0, 0], 2); // Start zoomed out
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: "© OpenStreetMap contributors"
+    attribution: "© OpenStreetMap contributors",
+    maxZoom: 19, // Optional: Set max zoom
   }).addTo(map);
 
   // Show the "Finding location..." message immediately
@@ -127,21 +130,23 @@ document.addEventListener("DOMContentLoaded", function() {
 
   // Function to geocode the address and update the map
   function geocodeAndUpdateMap() {
-    if (!address) {
-        console.warn("No pickup address provided.");
-        messageEl.textContent = "Pickup address is missing.";
+    if (!address || address.trim() === "") {
+        console.warn("No pickup address provided or address is empty.");
+        messageEl.textContent = "Pickup address is missing or empty.";
         messageEl.className = "alert alert-danger mt-2";
+        messageEl.style.display = "block"; // Ensure it's visible
         return; // Stop if no address
     }
 
-    // Clean up the address for geocoding
+    // Clean up the address for geocoding (replace newlines, trim whitespace)
     const geocodingAddress = address.replace(/\n/g, ' ').trim();
     console.log("Attempting to geocode:", geocodingAddress);
 
     fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(geocodingAddress)}&limit=1`)
       .then(response => {
         if (!response.ok) {
-          throw new Error(`Geocoding HTTP error! Status: ${response.status}`);
+          // Throw an error with status text for better debugging
+          throw new Error(`Geocoding HTTP error! Status: ${response.status} ${response.statusText}`);
         }
         return response.json();
       })
@@ -152,7 +157,9 @@ document.addEventListener("DOMContentLoaded", function() {
           const lat = parseFloat(data[0].lat);
           const lon = parseFloat(data[0].lon);
 
+          // Validate coordinates
           if (isNaN(lat) || isNaN(lon)) {
+             console.error("Invalid coordinates received:", data[0]);
              throw new Error("Invalid coordinates received from geocoding service.");
           }
 
@@ -162,23 +169,27 @@ document.addEventListener("DOMContentLoaded", function() {
           map.setView([lat, lon], 15); // Zoom level 15 for specific address
           L.marker([lat, lon])
            .addTo(map)
-           .bindPopup(`<b>Pickup:</b><br>${address.replace(/\n/g, '<br>')}`) // Use original address, format for popup
+           .bindPopup(`<b>Pickup:</b><br>${address.replace(/\n/g, '<br>')}`) // Use original address, format newlines for popup
            .openPopup();
 
           // Hide the message element on success
           messageEl.style.display = "none";
 
         } else {
+          // Handle case where geocoding service returns empty results
           console.warn("Geocoding found no results for:", geocodingAddress);
-          messageEl.textContent = `Could not find location for: "${geocodingAddress}". Please check the address format.`;
+          messageEl.textContent = `Could not find location for: "${geocodingAddress}". Please verify the address details.`;
           messageEl.className = "alert alert-warning mt-2";
+          messageEl.style.display = "block"; // Ensure message is visible
           // Keep the world/default map view if no results
         }
       })
       .catch(error => {
+        // Handle fetch errors or errors thrown during processing
         console.error("Geocoding process error:", error);
         messageEl.textContent = `Error finding location: ${error.message}. Please try again later or check the address.`;
         messageEl.className = "alert alert-danger mt-2";
+        messageEl.style.display = "block"; // Ensure message is visible
         // Keep the world/default map view on error
       });
   }
@@ -186,12 +197,12 @@ document.addEventListener("DOMContentLoaded", function() {
   // Invalidate map size and attempt geocoding shortly after map initializes
   // Use requestAnimationFrame to wait for the next repaint, then setTimeout
   requestAnimationFrame(() => {
-      map.invalidateSize();
-      setTimeout(geocodeAndUpdateMap, 100); // Short delay before geocoding
+      map.invalidateSize(); // Ensure map dimensions are correct
+      setTimeout(geocodeAndUpdateMap, 150); // Short delay before geocoding
   });
 
 
-  // 2) Live tracking when Delivery and shared (Keep this part as it was)
+  // 2) Live tracking when Delivery and shared (Ensure this part is complete)
   if (status === "Delivery" && share) {
     // Setup WebSocket connection
     const ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
@@ -202,10 +213,137 @@ document.addEventListener("DOMContentLoaded", function() {
     let conciergeLocationMarker = null; // Keep track of the marker locally
 
     function connectWebSocket() {
+      console.log("Attempting to connect WebSocket:", socketUrl);
       socket = new WebSocket(socketUrl);
 
       socket.onopen = function(e) {
         console.log("WebSocket connected");
       };
 
-      socket.onclose = 
+      socket.onclose = function(e) {
+        console.log(`WebSocket disconnected. Code: ${e.code}, Reason: ${e.reason}. Attempting to reconnect...`);
+        conciergeLocationMarker = null; // Reset marker on disconnect
+        // Attempt to reconnect after a delay
+        setTimeout(connectWebSocket, 5000); // Reconnect every 5 seconds
+      };
+
+      socket.onerror = function(e) {
+        console.error("WebSocket error:", e);
+        // Don't explicitly close here, onclose will handle reconnect attempt
+      };
+
+      // Handle incoming WebSocket messages
+      socket.onmessage = function(e) {
+        try {
+            const data = JSON.parse(e.data);
+            console.log("WebSocket message received:", data);
+            if (data.lat && data.lng) {
+              const ll = [parseFloat(data.lat), parseFloat(data.lng)];
+
+              if (isNaN(ll[0]) || isNaN(ll[1])) {
+                  console.error("Invalid coordinates received via WebSocket:", data);
+                  return;
+              }
+
+              if (!conciergeLocationMarker) { // Use local variable
+                console.log("Creating concierge marker at:", ll);
+                conciergeLocationMarker = L.marker(ll, {
+                  icon: L.icon({
+                    iconUrl: "{% static 'images/concierge-icon.png' %}", // Ensure this path is correct
+                    iconSize:   [32, 32],
+                    iconAnchor: [16, 32], // Anchor at bottom center
+                    popupAnchor: [0, -32] // Popup above the icon
+                  })
+                })
+                .addTo(map)
+                .bindPopup("Concierge Location");
+
+                // Optionally adjust map view if needed, e.g., fit bounds
+                // if (address) { // Check if pickup marker exists
+                //    const pickupLatLng = ... // get pickup marker latlng if stored
+                //    map.fitBounds(L.latLngBounds(ll, pickupLatLng).pad(0.1));
+                // } else {
+                //    map.setView(ll, 15); // Or just center on concierge if no pickup
+                // }
+
+              } else {
+                console.log("Updating concierge marker to:", ll);
+                conciergeLocationMarker.setLatLng(ll);
+              }
+              // Optionally open popup on update: .openPopup();
+            } else {
+               console.warn("WebSocket message missing lat/lng:", data);
+            }
+        } catch (parseError) {
+            console.error("Failed to parse WebSocket message:", e.data, parseError);
+        }
+      }; // End of onmessage
+    } // End of connectWebSocket
+
+    connectWebSocket(); // Initial connection
+
+    // concierge → send coords via WebSocket
+    if (role === "concierge" && navigator.geolocation) {
+      console.log("Setting up geolocation watch for concierge");
+      navigator.geolocation.watchPosition(pos => {
+        const lat = pos.coords.latitude,
+              lng = pos.coords.longitude;
+        console.log(`Concierge location update: ${lat}, ${lng}`);
+        // Send location via WebSocket if connected
+        if (socket && socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({ lat: lat, lng: lng }));
+        } else {
+           console.warn("WebSocket not open, cannot send location.");
+        }
+      },
+      (geoError) => { // Handle geolocation errors
+         console.error("Geolocation error:", geoError);
+      },
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }); // Options
+    } // End of if (role === "concierge")
+
+    // customer/dealer/owner → Initial location fetch (if needed, might be redundant if WS connects fast)
+    // This fetches the *last known* location when the page loads
+    // Consider if this is still necessary or if waiting for the first WS message is better
+    /*
+    fetch("{% url 'service_request_location' service_request.id %}", {
+      credentials: "same-origin" // Important for session auth
+    })
+      .then(r => {
+        if (!r.ok) throw new Error(`Initial location fetch failed: ${r.status}`);
+        return r.json();
+      })
+      .then(data => {
+        console.log("Initial location fetch result:", data);
+        if (data.lat && data.lng && !conciergeLocationMarker) { // Only if WS hasn't created it yet
+          const ll = [parseFloat(data.lat), parseFloat(data.lng)];
+           if (!isNaN(ll[0]) && !isNaN(ll[1])) {
+              console.log("Creating concierge marker from initial fetch:", ll);
+              conciergeLocationMarker = L.marker(ll, {
+                icon: L.icon({
+                  iconUrl: "{% static 'images/concierge-icon.png' %}",
+                  iconSize:   [32,32],
+                  iconAnchor: [16,32],
+                  popupAnchor: [0, -32]
+                })
+              })
+              .addTo(map)
+              .bindPopup("Concierge Location (Initial)");
+              // Optionally adjust view if needed
+           }
+        }
+      })
+      .catch(error => {
+         console.error("Error fetching initial location:", error);
+      });
+    */
+
+  } else if (status !== "Delivery") {
+    console.log("Location tracking is not active (Status is not Delivery).");
+  } else if (!share) {
+    console.log("Location sharing is not enabled for this request.");
+  } // End of the if/else if chain for WebSocket logic
+
+}); // End of DOMContentLoaded listener
+</script>
+{% endblock %} {# End of block scripts #}
