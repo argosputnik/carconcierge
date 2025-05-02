@@ -90,8 +90,8 @@
        </a>
     {% endif %}
 
-    {# Check permission before showing edit button - FIXED LIST SYNTAX #}
-    {% if request.user == service_request.customer or request.user.role == 'concierge' or request.user.role == 'dealer' or request.user.role == 'owner' %}
+    {# Check permission before showing edit button #}
+    {% if request.user == service_request.customer or request.user.role in ['concierge', 'dealer', 'owner'] %}
       <a href="{% url 'edit_service_request' service_request.id %}" class="btn btn-primary">
         Edit
       </a>
