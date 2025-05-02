@@ -81,20 +81,8 @@
       style="height:500px; border:1px solid #ccc; margin-bottom:1rem;"
     ></div>
 
-    <div class="mt-4 mb-3">
-      <button type="submit" class="btn btn-dark">Save Changes</button>
-      {% if user.role == 'customer' %}
-        <a href="{% url 'customer_dashboard' %}" class="btn btn-secondary ms-2">Cancel</a>
-      {% elif user.role == 'concierge' %}
-        <a href="{% url 'concierge_dashboard' %}" class="btn btn-secondary ms-2">Cancel</a>
-      {% elif user.role == 'dealer' %}
-        <a href="{% url 'dealer_dashboard' %}" class="btn btn-secondary ms-2">Cancel</a>
-      {% elif user.role == 'owner' %}
-        <a href="{% url 'owner_dashboard' %}" class="btn btn-secondary ms-2">Cancel</a>
-      {% else %}
-        <a href="{% url 'home' %}" class="btn btn-secondary ms-2">Cancel</a>
-      {% endif %}
-    </div>
+    <button type="submit" class="btn btn-dark">Save Changes</button>
+    <a href="{% url 'customer_dashboard' %}" class="btn btn-secondary ms-2">Cancel</a>
   </form>
 </div>
 {% endblock %}
@@ -167,4 +155,3 @@
     });
   </script>
 {% endblock %}
-
