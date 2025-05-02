@@ -123,8 +123,8 @@ document.addEventListener("DOMContentLoaded", function() {
   if (address) {
     const geocodingAddress = address.replace(/\n/g, ' ').trim();
     console.log("Geocoding address:", geocodingAddress);
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(geocodingAddress)}`)
 
-    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`)
       .then(r => {
         if (!r.ok) throw new Error('Geocoding failed');
         return r.json();
