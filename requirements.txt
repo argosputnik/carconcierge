@@ -11,3 +11,5 @@ sqlparse==0.5.3
 typing_extensions==4.13.2
 uvicorn==0.34.2
 whitenoise==6.9.0
+channels==4.2.2
+daphne==x.x.x
