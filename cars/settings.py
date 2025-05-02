@@ -13,7 +13,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY
 SECRET_KEY = os.getenv("SECRET_KEY")               # set in Render Environment
-DEBUG      = os.getenv("DEBUG", "False") == "True" # set DEBUG=True locally, False in prod
+DEBUG      = os.getenv("DEBUG", "TRUE") == "True" # set DEBUG=True locally, False in prod
 
 ALLOWED_HOSTS = [
     os.getenv("RENDER_EXTERNAL_HOSTNAME"),  # e.g. carconcierge-xxxxx.onrender.com
@@ -133,4 +133,24 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Login redirect
 LOGIN_REDIRECT_URL = "/redirect-after-login/"
+
+# Logging debugging
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'django': {
+        'handlers': ['console'],
+        'level': 'INFO',
+        'propagate': True,
+    },
+}
 
