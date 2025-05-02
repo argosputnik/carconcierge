@@ -25,7 +25,6 @@
         <dd class="col-sm-9">{{ service_request.requested_at|date:"Y-m-d H:i" }}</dd> {# Corrected date format dash #}
 
         <dt class="col-sm-3">Pickup Location</dt>
-        {# Display the location with formatting in the details section #}
         <dd class="col-sm-9" style="white-space: pre-line;">{{ service_request.pickup_location }}</dd>
 
         <dt class="col-sm-3">Dropoff Location</dt>
@@ -57,7 +56,7 @@
     <div class="card-body">
       <div
         id="map"
-        {# REMOVED |escapejs here. Let dataset handle the raw string with newlines. #}
+        {# Removed |escapejs from data-address #}
         data-address="{{ service_request.pickup_location }}"
         data-share="{{ service_request.share_location|yesno:'true,false' }}"
         data-status="{{ service_request.status }}"
@@ -113,12 +112,12 @@ document.addEventListener("DOMContentLoaded", function() {
   if (!mapEl) return; // Exit if map element doesn't exist
 
   // Get data from attributes
-  const address = mapEl.dataset.address; // Raw address string from data-address
+  const address = mapEl.dataset.address; // Raw address string
   const share   = mapEl.dataset.share === "true";
   const status  = mapEl.dataset.status;
-  const role    = "{{ request.user.role|escapejs }}"; // Role still needs escaping for JS string
+  const role    = "{{ request.user.role|escapejs }}"; // Role needs escaping
 
-  console.log("Pickup address read from data-address:", address); // Should show newlines now if present
+  console.log("Pickup address read from data-address:", address);
 
   // 1) Initialize map with a basic world view
   const map = L.map("map").setView([0, 0], 2); // Start zoomed out
@@ -140,9 +139,9 @@ document.addEventListener("DOMContentLoaded", function() {
         return;
     }
 
-    // Clean up the address for geocoding: replace ACTUAL newlines with spaces, trim whitespace
+    // Clean up the address for geocoding
     const geocodingAddress = address.replace(/\n/g, ' ').trim();
-    console.log("Address prepared for geocoding:", geocodingAddress); // Should NOT contain \u000A
+    console.log("Address prepared for geocoding:", geocodingAddress);
 
     fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(geocodingAddress)}&limit=1`)
       .then(response => {
@@ -169,7 +168,7 @@ document.addEventListener("DOMContentLoaded", function() {
           map.setView([lat, lon], 15);
           L.marker([lat, lon])
            .addTo(map)
-           .bindPopup(`<b>Pickup:</b><br>${address.replace(/\n/g, '<br>')}`) // Use original address, format newlines for HTML popup
+           .bindPopup(`<b>Pickup:</b><br>${address.replace(/\n/g, '<br>')}`)
            .openPopup();
 
           // Hide the message element on success
@@ -197,7 +196,7 @@ document.addEventListener("DOMContentLoaded", function() {
   });
 
 
-  // 2) Live tracking when Delivery and shared (Keep this part as it was)
+  // 2) Live tracking when Delivery and shared
   if (status === "Delivery" && share) {
     // Setup WebSocket connection
     const ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
@@ -259,10 +258,10 @@ document.addEventListener("DOMContentLoaded", function() {
         } catch (parseError) {
             console.error("Failed to parse WebSocket message:", e.data, parseError);
         }
-      };
-    }
+      }; // End of onmessage
+    } // End of connectWebSocket
 
-    connectWebSocket();
+    connectWebSocket(); // Initial connection
 
     if (role === "concierge" && navigator.geolocation) {
       console.log("Setting up geolocation watch for concierge");
@@ -280,13 +279,13 @@ document.addEventListener("DOMContentLoaded", function() {
          console.error("Geolocation error:", geoError);
       },
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 });
-    }
+    } // End of if (role === "concierge")
 
-    // Optional: Initial fetch (consider if needed)
+    // Optional: Initial fetch (Corrected Comment)
     /*
     fetch("{% url 'service_request_location' service_request.id %}", { credentials: "same-origin" })
       .then(r => { if (!r.ok) throw new Error(`Initial fetch failed: ${r.status}`); return r.json(); })
-      .then(data => { console.log("Initial location fetch:", data); if (data.lat && data.lng && !conciergeLocationMarker) { /* create marker */ } })
+      .then(data => { console.log("Initial location fetch:", data); if (data.lat && data.lng && !conciergeLocationMarker) { /* Handle fetched data if needed */ } })
       .catch(error => { console.error("Initial location fetch error:", error); });
     */
 
@@ -294,7 +293,7 @@ document.addEventListener("DOMContentLoaded", function() {
     console.log("Location tracking not active (Status != Delivery).");
   } else if (!share) {
     console.log("Location sharing not enabled.");
-  }
+  } // End of the if/else if chain for WebSocket logic
 
 }); // End of DOMContentLoaded listener
 </script>
