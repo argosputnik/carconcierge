@@ -21,6 +21,23 @@ ALLOWED_HOSTS = [
     "24.199.122.100",
 ]
 
+# ASGI setup
+ASGI_APPLICATION = "myproject.asgi.application"
+
+
+# channel layers for websockets/redis
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        # For production, use Redis:
+        # 'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        # 'CONFIG': {
+        #     "hosts": [('127.0.0.1', 6379)],
+        # },
+    },
+}
+
+
 # Application definition
 INSTALLED_APPS = [
     "main.apps.MainConfig",  # your app
@@ -30,6 +47,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "channels",
 ]
 
 AUTH_USER_MODEL = "main.User"

@@ -1,5 +1,5 @@
 import json
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect, get_object_or_404, router
 from django.contrib.auth import login, get_user_model
 from django.contrib.auth.models import Group
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -661,3 +661,6 @@ def service_request_location(request, request_id):
         'lng': sr.concierge_longitude,
     })
 
+# websockets view
+def home(request):
+    return render(request, 'home.html')

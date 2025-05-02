@@ -64,23 +64,7 @@
 
 
 {% block scripts %}
-// ——— helper to read the CSRF token from the cookie ———
-function getCookie(name) {
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== '') {
-    for (let cookie of document.cookie.split(';')) {
-      cookie = cookie.trim();
-      // Does this cookie string begin with the name we want?
-      if (cookie.startsWith(name + '=')) {
-        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-        break;
-      }
-    }
-  }
-  return cookieValue;
-}
-const csrftoken = getCookie('csrftoken');
-
+<script>
 document.addEventListener("DOMContentLoaded", function() {
   const mapEl   = document.getElementById("map"),
         address = mapEl.dataset.address,
@@ -112,8 +96,26 @@ document.addEventListener("DOMContentLoaded", function() {
 
   // 2) Live tracking when Delivery
   if (status === "Delivery") {
+    // Setup WebSocket connection
+    const ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
+    const socket = new WebSocket(
+      ws_scheme + '://' + window.location.host + 
+      '/ws/location/{{ service_request.id }}/'
+    );
+    
+    socket.onopen = function(e) {
+      console.log("WebSocket connected");
+    };
+    
+    socket.onclose = function(e) {
+      console.log("WebSocket disconnected");
+    };
+    
+    socket.onerror = function(e) {
+      console.error("WebSocket error:", e);
+    };
 
-    // concierge → show local pin + POST coords to server
+    // concierge → show local pin + send coords via WebSocket
     if (role === "concierge" && navigator.geolocation) {
       navigator.geolocation.watchPosition(pos => {
         const lat = pos.coords.latitude,
@@ -136,55 +138,68 @@ document.addEventListener("DOMContentLoaded", function() {
           window.conciergeMarker.setLatLng(ll).openPopup();
         }
 
-        // POST to update_concierge_location with CSRF + credentials
-        fetch("{% url 'update_concierge_location' service_request.id %}", {
-          method: "POST",
-          credentials: "same-origin",               // include cookies
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken":   csrftoken              // valid CSRF
-          },
-          body: JSON.stringify({ lat, lng })
-        })
-        .then(r => {
-          if (!r.ok) console.error("Update location failed:", r.status);
-        })
-        .catch(console.error);
+        // Send location via WebSocket if connected
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({ lat, lng }));
+        }
       },
       console.error,
       { enableHighAccuracy: true, maximumAge: 5000 });
     }
 
-    // customer/dealer/owner → poll only if share_location is on
+    // customer/dealer/owner → receive updates via WebSocket
     else if (share) {
       let customerMarker = null;
-      function fetchConcierge() {
-        fetch("{% url 'service_request_location' service_request.id %}", {
-          credentials: "same-origin"
-        })
-          .then(r => r.json())
-          .then(data => {
-            if (data.lat && data.lng) {
-              const ll = [data.lat, data.lng];
-              if (!customerMarker) {
-                customerMarker = L.marker(ll, {
-                  icon: L.icon({
-                    iconUrl: "{% static 'images/concierge-icon.png' %}",
-                    iconSize:   [32,32],
-                    iconAnchor: [16,32]
-                  })
+      
+      // Handle incoming WebSocket messages
+      socket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        if (data.lat && data.lng) {
+          const ll = [data.lat, data.lng];
+          if (!customerMarker) {
+            customerMarker = L.marker(ll, {
+              icon: L.icon({
+                iconUrl: "{% static 'images/concierge-icon.png' %}",
+                iconSize:   [32,32],
+                iconAnchor: [16,32]
+              })
+            })
+            .addTo(map)
+            .bindPopup("Your Concierge");
+            
+            // Center map on first location update
+            map.setView(ll, 15);
+          } else {
+            customerMarker.setLatLng(ll);
+          }
+        }
+      };
+      
+      // Initial location fetch (in case WebSocket connects after location is already set)
+      fetch("{% url 'service_request_location' service_request.id %}", {
+        credentials: "same-origin"
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (data.lat && data.lng) {
+            const ll = [data.lat, data.lng];
+            if (!customerMarker) {
+              customerMarker = L.marker(ll, {
+                icon: L.icon({
+                  iconUrl: "{% static 'images/concierge-icon.png' %}",
+                  iconSize:   [32,32],
+                  iconAnchor: [16,32]
                 })
-                .addTo(map)
-                .bindPopup("Your Concierge");
-              } else {
-                customerMarker.setLatLng(ll);
-              }
+              })
+              .addTo(map)
+              .bindPopup("Your Concierge");
+              
+              // Center map on initial location
+              map.setView(ll, 15);
             }
-          })
-          .catch(console.error);
-      }
-      fetchConcierge();
-      setInterval(fetchConcierge, 5000);
+          }
+        })
+        .catch(console.error);
     }
   }
 });
