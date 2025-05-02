@@ -281,20 +281,15 @@ document.addEventListener("DOMContentLoaded", function() {
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 });
     } // End of if (role === "concierge")
 
-    // Optional: Initial fetch (Corrected Comment)
+    // Optional: Initial fetch (Nested comment REMOVED)
     /*
     fetch("{% url 'service_request_location' service_request.id %}", { credentials: "same-origin" })
       .then(r => { if (!r.ok) throw new Error(`Initial fetch failed: ${r.status}`); return r.json(); })
-      .then(data => { console.log("Initial location fetch:", data); if (data.lat && data.lng && !conciergeLocationMarker) { /* Handle fetched data if needed */ } })
+      .then(data => { console.log("Initial location fetch:", data); if (data.lat && data.lng && !conciergeLocationMarker) { /* Handle fetched data if needed */ } }) // <<< REMOVED INNER COMMENT
       .catch(error => { console.error("Initial location fetch error:", error); });
     */
 
   } else if (status !== "Delivery") {
     console.log("Location tracking not active (Status != Delivery).");
   } else if (!share) {
-    console.log("Location sharing not enabled.");
-  } // End of the if/else if chain for WebSocket logic
-
-}); // End of DOMContentLoaded listener
-</script>
-{% endblock %} {# End of block scripts #}
+    
