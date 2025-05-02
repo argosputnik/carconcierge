@@ -112,12 +112,23 @@ document.addEventListener("DOMContentLoaded", function() {
         status  = mapEl.dataset.status,
         role    = "{{ request.user.role|escapejs }}"; // Escape role for JS
 
+console.log("Original address:", address);
 
-  // 1) Init map & pickup marker
-  const map = L.map("map").setView([0,0],2);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: "© OpenStreetMap contributors"
-  }).addTo(map);
+// Initialize map with a slight delay to ensure proper rendering
+  setTimeout(() => {
+    // 1) Init map & pickup marker
+    const map = L.map("map").setView([0,0], 2);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap contributors"
+    }).addTo(map);
+    
+    map.invalidateSize(); // Force a redraw
+
+// 1) Init map & pickup marker
+//  const map = L.map("map").setView([0,0],2);
+ // L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+ //   attribution: "© OpenStreetMap contributors"
+//  }).addTo(map);
 
   // drop the pickup pin
   if (address) {
