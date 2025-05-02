@@ -661,6 +661,3 @@ def service_request_location(request, request_id):
         'lng': sr.concierge_longitude,
     })
 
-# websockets view
-def home(request):
-    return render(request, 'home.html')
