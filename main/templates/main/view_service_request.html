@@ -104,52 +104,47 @@
 {% block scripts %}
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-  const mapEl   = document.getElementById("map");
+  const mapEl = document.getElementById("map");
   if (!mapEl) return; // Exit if map element doesn't exist
 
   const address = mapEl.dataset.address,
-        share   = mapEl.dataset.share   === "true",
+        share   = mapEl.dataset.share === "true",
         status  = mapEl.dataset.status,
         role    = "{{ request.user.role|escapejs }}"; // Escape role for JS
 
-console.log("Original address:", address);
+  console.log("Original address:", address);
 
-// Initialize map with a slight delay to ensure proper rendering
-  setTimeout(() => {
-    // 1) Init map & pickup marker
-    const map = L.map("map").setView([0,0], 2);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "© OpenStreetMap contributors"
-    }).addTo(map);
-    
-    map.invalidateSize(); // Force a redraw
+  // 1) Init map & pickup marker
+  const map = L.map("map").setView([0,0], 2);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "© OpenStreetMap contributors"
+  }).addTo(map);
 
-// 1) Init map & pickup marker
-//  const map = L.map("map").setView([0,0],2);
- // L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
- //   attribution: "© OpenStreetMap contributors"
-//  }).addTo(map);
+  // Force a map redraw
+  map.invalidateSize();
 
   // drop the pickup pin
   if (address) {
     const geocodingAddress = address.replace(/\n/g, ' ').trim();
     console.log("Geocoding address:", geocodingAddress);
+    
     fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(geocodingAddress)}`)
-
       .then(r => {
         if (!r.ok) throw new Error('Geocoding failed');
         return r.json();
       })
       .then(data => {
+        console.log("Geocoding results:", data);
         if (data.length) {
           const lat = +data[0].lat, lon = +data[0].lon;
+          console.log(`Setting map view to: ${lat}, ${lon}`);
           map.setView([lat, lon], 15);
           L.marker([lat, lon])
            .addTo(map)
            .bindPopup(`<b>Pickup:</b> ${address}`) // Added label to popup
            .openPopup();
         } else {
-          console.warn("Geocoding found no results for:", address);
+          console.warn("Geocoding found no results for:", geocodingAddress);
           // Optionally add a message to the user
         }
       })
@@ -160,7 +155,6 @@ console.log("Original address:", address);
   } else {
     console.warn("No pickup address provided for geocoding.");
   }
-
 
   // 2) Live tracking when Delivery and shared
   if (status === "Delivery" && share) {
@@ -211,7 +205,6 @@ console.log("Original address:", address);
              } else {
                 // Optionally adjust view to fit both markers if needed
              }
-
           } else {
             window.conciergeLocationMarker.setLatLng(ll).openPopup(); // Keep popup open on update
           }
@@ -275,9 +268,9 @@ console.log("Original address:", address);
 
   // Invalidate map size on tab/accordion changes if map is in a hidden container initially
   // This is important if the map div is inside a collapsible Bootstrap element
-   requestAnimationFrame(() => {
-       map.invalidateSize();
-   });
+  requestAnimationFrame(() => {
+    map.invalidateSize();
+  });
 });
 </script>
 {% endblock %}
