@@ -61,6 +61,7 @@
         data-status="{{ service_request.status }}"
         style="height:500px; border:1px solid #ccc;"
       ></div>
+      <div id="map-error" class="alert alert-warning mt-2" style="display:none;"></div>
     </div>
   </div>
 
@@ -105,6 +106,7 @@
 <script>
 document.addEventListener("DOMContentLoaded", function() {
   const mapEl = document.getElementById("map");
+  const errorEl = document.getElementById("map-error");
   if (!mapEl) return; // Exit if map element doesn't exist
 
   const address = mapEl.dataset.address,
@@ -114,8 +116,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
   console.log("Original address:", address);
 
-  // 1) Init map & pickup marker
-  const map = L.map("map").setView([0,0], 2);
+  // Initialize map with a default view of the US
+  const map = L.map("map").setView([37.0902, -95.7129], 4);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "© OpenStreetMap contributors"
   }).addTo(map);
@@ -123,37 +125,61 @@ document.addEventListener("DOMContentLoaded", function() {
   // Force a map redraw
   map.invalidateSize();
 
-  // drop the pickup pin
-  if (address) {
+  // Function to geocode the address
+  function geocodeAddress() {
+    // Clean up the address for geocoding
     const geocodingAddress = address.replace(/\n/g, ' ').trim();
     console.log("Geocoding address:", geocodingAddress);
     
-    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(geocodingAddress)}`)
+    // Show loading message
+    errorEl.textContent = "Finding location...";
+    errorEl.style.display = "block";
+    errorEl.className = "alert alert-info mt-2";
+    
+    // Try to geocode with Nominatim
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(geocodingAddress)}&limit=1`)
       .then(r => {
-        if (!r.ok) throw new Error('Geocoding failed');
+        if (!r.ok) throw new Error('Geocoding failed with status: ' + r.status);
         return r.json();
       })
       .then(data => {
         console.log("Geocoding results:", data);
-        if (data.length) {
-          const lat = +data[0].lat, lon = +data[0].lon;
+        
+        if (data && data.length > 0) {
+          const lat = parseFloat(data[0].lat);
+          const lon = parseFloat(data[0].lon);
           console.log(`Setting map view to: ${lat}, ${lon}`);
+          
+          // Set the view and add marker
           map.setView([lat, lon], 15);
           L.marker([lat, lon])
            .addTo(map)
-           .bindPopup(`<b>Pickup:</b> ${address}`) // Added label to popup
+           .bindPopup(`<b>Pickup:</b> ${address}`)
            .openPopup();
+          
+          // Hide error message
+          errorEl.style.display = "none";
         } else {
           console.warn("Geocoding found no results for:", geocodingAddress);
-          // Optionally add a message to the user
+          errorEl.textContent = "Could not find exact location on map. Please check the address.";
+          errorEl.className = "alert alert-warning mt-2";
         }
       })
       .catch(error => {
         console.error("Geocoding error:", error);
-        // Optionally display a user-friendly error message on the page
+        errorEl.textContent = "Error finding location: " + error.message;
+        errorEl.className = "alert alert-danger mt-2";
       });
+  }
+
+  // Try geocoding with a slight delay to ensure map is initialized
+  if (address) {
+    setTimeout(geocodeAddress, 300);
   } else {
     console.warn("No pickup address provided for geocoding.");
+    errorEl.textContent = "No pickup address provided.";
+    errorEl.className = "alert alert-warning mt-2";
+    errorEl.style.display = "block";
   }
 
   // 2) Live tracking when Delivery and shared
@@ -205,6 +231,7 @@ document.addEventListener("DOMContentLoaded", function() {
              } else {
                 // Optionally adjust view to fit both markers if needed
              }
+
           } else {
             window.conciergeLocationMarker.setLatLng(ll).openPopup(); // Keep popup open on update
           }
