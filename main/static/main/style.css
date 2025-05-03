@@ -289,7 +289,7 @@ th a:hover {
 }
 
 .card.mb-4 #map {  /* Target the map inside the card */
-  height: 200px !important;
-  width: 200px !important;
+  height: 400px
+  width: 400px
   margin: 0 auto;
 }
