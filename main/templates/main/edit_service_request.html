@@ -40,6 +40,7 @@
     {# --- Pickup Location --- #}
     {% with field=form.pickup_location %}
       {% if field %}
+        {# Keep this logic if you want different HTML for readonly locations #}
         {% if can_edit_locations|default:False %}
           <div class="mb-3 d-flex align-items-center">
             <label for="{{ field.id_for_label }}" class="me-3" style="width:180px;">
@@ -70,6 +71,7 @@
     {# --- Dropoff Location --- #}
     {% with field=form.dropoff_location %}
       {% if field %}
+        {# Keep this logic if you want different HTML for readonly locations #}
         {% if can_edit_locations|default:False %}
           <div class="mb-3 d-flex align-items-center">
             <label for="{{ field.id_for_label }}" class="me-3" style="width:180px;">
@@ -112,14 +114,15 @@
       {% endif %}
     {% endwith %}
 
-    {# --- Render Remaining Fields --- #}
+    {# --- Render Remaining Fields (including status and assigned_to) --- #}
+    {# The form's __init__ now controls if status/assigned_to are disabled #}
     {% for field in form %}
       {% if field.name != 'pickup_location' and field.name != 'dropoff_location' and field.name != 'description' %}
          <div class="mb-3 d-flex align-items-center">
            <label for="{{ field.id_for_label }}" class="me-3" style="width:180px;">
              {{ field.label }}
            </label>
-           {{ field }}
+           {{ field }} {# This will render enabled or disabled based on form logic #}
          </div>
          {% if field.errors %}
            <div class="text-danger mb-2 ms-3">{{ field.errors }}</div>
@@ -127,28 +130,30 @@
       {% endif %}
     {% endfor %}
 
+    {# REMOVED the explicit read-only "Assigned To" block, as the form field handles it now #}
+
     {# --- Map Section --- #}
     <div class="card mb-4">
       <div class="card-header">Location Map</div>
-      <div class="card-body">
+      <div class="card-body d-flex justify-content-center">
         <div
           id="map"
           data-address="{{ service_request.pickup_location }}"
           data-share="{{ service_request.share_location|yesno:'true,false' }}"
           data-status="{{ service_request.status }}"
-          style="height: 200px; width: 200px; border: 1px solid #ccc; margin: 0 auto;" {# Map style #}
+          {# Size must be set via CSS #}
         ></div>
-        <div id="map-message" class="alert alert-info mt-2" style="display:none;">
+      </div>
+       <div id="map-message" class="alert alert-info mt-2 mx-3" style="display:none;">
           Finding location...
         </div>
-      </div>
     </div> {# End of Map Card #}
 
     {# --- Buttons (Below Map) --- #}
     <div class="mt-4 text-center">
       <button type="submit" class="btn btn-dark me-2">Save Changes</button>
-
       {# Dynamic Cancel Button URL based on user role #}
+      {% comment %} (Cancel button logic remains the same) {% endcomment %}
       {% if request.user.role == 'customer' %}
         <a href="{% url 'customer_dashboard' %}" class="btn btn-secondary">
           Cancel
@@ -178,54 +183,41 @@
 {% endblock %}
 
 {% block scripts %}
+{# Script block remains the same #}
 <script>
 document.addEventListener("DOMContentLoaded", function() {
   const mapEl = document.getElementById("map");
-  // Check if mapEl exists before proceeding
   if (!mapEl) {
       console.error("Map element not found!");
       return;
   }
-
-  // 1) Initialize map (Leaflet JS/CSS already loaded in base.html)
   const map = L.map("map").setView([0, 0], 2);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "© OpenStreetMap contributors"
   }).addTo(map);
-
   let marker = null;
-  const messageEl = document.getElementById("map-message"); // Get message element
-
-  // Function to update map message
+  const messageEl = document.getElementById("map-message");
   function updateMapMessage(text, type = 'info') {
       if (messageEl) {
           messageEl.textContent = text;
-          messageEl.className = `alert alert-${type} mt-2`;
+          messageEl.className = `alert alert-${type} mt-2 mx-3`;
           messageEl.style.display = text ? 'block' : 'none';
       }
   }
-
-  // 2) Geocode address and update map
   function geocodeAndUpdateMap(address) {
-      // Ensure address is treated as a string, even if it's null/undefined initially
       const addressStr = String(address || "").trim();
-
       if (!addressStr) {
           console.warn("No pickup address provided for map.");
           updateMapMessage("Pickup address not available.", "warning");
-          map.setView([0, 0], 2); // Reset view if no address
+          map.setView([0, 0], 2);
           return;
       }
-
-      updateMapMessage("Finding location...", "info"); // Show finding message
-      // Replace multiple spaces/newlines that might result from bad data
+      updateMapMessage("Finding location...", "info");
       const geocodingAddress = addressStr.replace(/\s+/g, ' ').trim();
       console.log("Map attempting to geocode:", geocodingAddress);
-
       fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(geocodingAddress)}&limit=1`)
         .then(response => {
           if (!response.ok) {
-            // Provide more context in the error
             throw new Error(`Geocoding HTTP error! Status: ${response.status} for address: ${geocodingAddress}`);
           }
           return response.json();
@@ -235,50 +227,38 @@ document.addEventListener("DOMContentLoaded", function() {
           if (data && data.length > 0) {
             const lat = parseFloat(data[0].lat);
             const lon = parseFloat(data[0].lon);
-
             if (!isNaN(lat) && !isNaN(lon)) {
               console.log(`Map geocoding successful. Coordinates: ${lat}, ${lon}`);
               map.setView([lat, lon], 15);
-              if (marker) map.removeLayer(marker); // Remove old marker if exists
+              if (marker) map.removeLayer(marker);
               marker = L.marker([lat, lon])
                .addTo(map)
-               // Use original addressStr for popup to show what's stored
                .bindPopup(`<b>Pickup:</b><br>${addressStr.replace(/\n/g, '<br>')}`)
                .openPopup();
-              updateMapMessage("", "info"); // Hide message on success
+              updateMapMessage("", "info");
             } else {
               console.error("Invalid coordinates received from geocoding:", data[0]);
               throw new Error("Invalid coordinates received.");
             }
           } else {
             console.warn("Map geocoding found no results for:", geocodingAddress);
-            // Show the address it failed to find
-            updateMapMessage(`Could not find location for: "${geocodingAddress}". Please check the address.`, "warning");
+            updateMapMessage(`Could not find location for: "${geocodingAddress}". Please check the address format in the database.`, "warning");
           }
         })
         .catch(error => {
           console.error("Map geocoding process error:", error);
-          // Display a more informative error message
           updateMapMessage(`Error finding location: ${error.message}. Check address format.`, "danger");
         });
   }
-
-  // 3) Get initial address from map element's data attribute
   const initialAddress = mapEl.dataset.address;
-
-  // 4) Initial map setup and geocoding attempt
   requestAnimationFrame(() => {
-      // Ensure map container is visible and sized before invalidating
       if (mapEl.offsetParent !== null) {
           map.invalidateSize();
       } else {
           console.warn("Map container might be hidden initially. Invalidation might be needed later.");
-          // Consider adding an observer if the map is in a tab/accordion
       }
-      // Delay geocoding slightly to ensure map is ready and size is calculated
       setTimeout(() => geocodeAndUpdateMap(initialAddress), 250);
   });
-
 });
 </script>
 {% endblock %}
