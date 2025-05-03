@@ -60,7 +60,6 @@
         data-address="{{ service_request.pickup_location }}"
         data-share="{{ service_request.share_location|yesno:'true,false' }}"
         data-status="{{ service_request.status }}"
-        style="height:500px; border:1px solid #ccc;"
       ></div>
       {# Message element to show geocoding status #}
       <div id="map-message" class="alert alert-info mt-2" style="display:none;">Finding location...</div>
