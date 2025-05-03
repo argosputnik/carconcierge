@@ -1,5 +1,5 @@
 {% extends 'main/base.html' %}
-{% load static helpers %} {# Removed 'macros' #}
+{% load static helpers %}
 
 {% block title %}Edit Service Request{% endblock %}
 
@@ -9,7 +9,7 @@
 <div class="container">
   <h2>Edit Service Request</h2>
 
-    <div class="d-flex justify-content-center gap-3 mb-4"> {# Increased bottom margin slightly for separation #}
+    <div class="d-flex justify-content-center gap-3 mb-4">
     {% include 'main/_dashboard_buttons.html' %}
   </div>
 
@@ -17,7 +17,7 @@
   <form method="post">
     {% csrf_token %}
 
-    {# --- Display Non-Field Errors First (Optional but good practice) --- #}
+    {# --- Display Non-Field Errors First --- #}
     {% if form.non_field_errors %}
       <div class="alert alert-danger">
         {{ form.non_field_errors }}
@@ -38,8 +38,8 @@
     {# --- Render Fields in Specific Order --- #}
 
     {# --- Pickup Location --- #}
-    {% with field=form.pickup_location %} {# Use 'with' for easier access #}
-      {% if field %} {# Check if field exists in the form #}
+    {% with field=form.pickup_location %}
+      {% if field %}
         {% if can_edit_locations|default:False %}
           <div class="mb-3 d-flex align-items-center">
             <label for="{{ field.id_for_label }}" class="me-3" style="width:180px;">
@@ -61,7 +61,6 @@
             />
           </div>
         {% endif %}
-        {# Display errors right after the field #}
         {% if field.errors %}
           <div class="text-danger mb-2 ms-3">{{ field.errors }}</div>
         {% endif %}
@@ -137,18 +136,46 @@
           data-address="{{ service_request.pickup_location }}"
           data-share="{{ service_request.share_location|yesno:'true,false' }}"
           data-status="{{ service_request.status }}"
+          style="height: 200px; width: 200px; border: 1px solid #ccc; margin: 0 auto;" {# Added smaller map style #}
         ></div>
         <div id="map-message" class="alert alert-info mt-2" style="display:none;">
           Finding location...
         </div>
       </div>
+    </div> {# End of Map Card #}
+
+    {# --- Buttons (Moved Below Map) --- #}
+    <div class="mt-4 text-center"> {# Centered buttons with margin-top #}
+      <button type="submit" class="btn btn-dark me-2">Save Changes</button>
+
+      {# Dynamic Cancel Button URL based on user role #}
+      {% if request.user.role == 'customer' %}
+        <a href="{% url 'customer_dashboard' %}" class="btn btn-secondary">
+          Cancel
+        </a>
+      {% elif request.user.role == 'concierge' %}
+        <a href="{% url 'concierge_dashboard' %}" class="btn btn-secondary">
+          Cancel
+        </a>
+      {% elif request.user.role == 'dealer' %}
+        <a href="{% url 'dealer_dashboard' %}" class="btn btn-secondary">
+          Cancel
+        </a>
+      {% elif request.user.role == 'owner' %}
+        <a href="{% url 'owner_dashboard' %}" class="btn btn-secondary">
+          Cancel
+        </a>
+      {% else %}
+         {# Default cancel link if role is not explicitly handled or user is anonymous #}
+         {# You might want to link to the previous page or a generic home page #}
+         <a href="{% url 'home' %}" class="btn btn-secondary">
+           Cancel
+         </a>
+      {% endif %}
     </div>
 
-    {# --- Buttons --- #}
-    <button type="submit" class="btn btn-dark">Save Changes</button>
-    <a href="{% url 'customer_dashboard' %}" class="btn btn-secondary ms-2">Cancel</a> {# Adjust URL dynamically if needed #}
-  </form>
-</div>
+  </form> {# End of Form #}
+</div> {# End of Container #}
 {% endblock %}
 
 {% block scripts %}
@@ -234,7 +261,14 @@ document.addEventListener("DOMContentLoaded", function() {
 
   // 4) Initial map setup and geocoding attempt
   requestAnimationFrame(() => {
-      map.invalidateSize();
+      // Ensure map container is visible and sized before invalidating
+      if (mapEl.offsetParent !== null) {
+          map.invalidateSize();
+      } else {
+          // If map is initially hidden (e.g., in a tab), invalidate when it becomes visible
+          // This might require observing visibility changes
+          console.warn("Map container might be hidden initially. Invalidation might be needed later.");
+      }
       setTimeout(() => geocodeAndUpdateMap(initialAddress), 150);
   });
 
