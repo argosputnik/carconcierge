@@ -18,14 +18,14 @@
         type="text"
         class="form-control"
         readonly
-        value="{{ service_request.customer.get_full_name }}"
+        value="{% if service_request.customer %}{{ service_request.customer.get_full_name }}{% else %}Unknown{% endif %}"
       />
     </div>
 
     {# --- Display Pickup Location --- #}
     {% for field in form %}
       {% if field.name == 'pickup_location' %}
-        {% if can_edit_locations %}
+        {% if can_edit_locations|default:False %}
           <div class="mb-3 d-flex align-items-center">
             <label for="{{ field.id_for_label }}" class="me-3" style="width:180px;">
               {{ field.label }}
@@ -52,7 +52,7 @@
     {# --- Display Dropoff Location --- #}
     {% for field in form %}
       {% if field.name == 'dropoff_location' %}
-        {% if can_edit_locations %}
+        {% if can_edit_locations|default:False %}
           <div class="mb-3 d-flex align-items-center">
             <label for="{{ field.id_for_label }}" class="me-3" style="width:180px;">
               {{ field.label }}
@@ -99,13 +99,14 @@
           </label>
           {{ field }}
         </div>
-      {% endif %}
-      {% if field.errors %}
-        <div class="text-danger mb-2 ms-3">{{ field.errors }}</div>
+        {% if field.errors %}
+          <div class="text-danger mb-2 ms-3">{{ field.errors }}</div>
+        {% endif %}
       {% endif %}
     {% endfor %}
 
-    <div class="card mb-4">{# Wrap map in a card #}
+    <div class="card mb-4">
+      {# Wrap map in a card #}
       <div class="card-header">Location Map</div>
       <div class="card-body">
         <div
@@ -140,7 +141,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
   let marker = null;
 
-  // 2) Reverse‑geocode helper
+  // 2) Reverse-geocode helper
   function reverseGeocode(lat, lon) {
     fetch(
       `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`
@@ -197,7 +198,7 @@ document.addEventListener("DOMContentLoaded", function() {
     );
   }
 
-  // 5) Click‑to‑move marker only if allowed
+  // 5) Click-to-move marker only if allowed
   if (canEdit) {
     map.on("click", e => placeMarker(e.latlng));
   }
