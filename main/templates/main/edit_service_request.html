@@ -1,7 +1,5 @@
 {% extends 'main/base.html' %}
-{% load static helpers %}
-{% load static helpers macros %}
-
+{% load static helpers %} {# Removed 'macros' #}
 
 {% block title %}Edit Service Request{% endblock %}
 
@@ -33,39 +31,28 @@
 
     {# --- Render Fields in Specific Order --- #}
 
-    {# Function to render a single field (avoids repeating HTML) #}
-    {% macro render_field(field, service_request, can_edit_locations) %}
+    {# --- Pickup Location --- #}
+    {% with field=form.pickup_location %} {# Use 'with' for easier access #}
       {% if field %} {# Check if field exists in the form #}
-        {% if field.name == 'pickup_location' or field.name == 'dropoff_location' %}
-          {# Handle location fields with edit check #}
-          {% if can_edit_locations|default:False %}
-            <div class="mb-3 d-flex align-items-center">
-              <label for="{{ field.id_for_label }}" class="me-3" style="width:180px;">
-                {{ field.label }}
-              </label>
-              {{ field }}
-            </div>
-          {% else %}
-            <div class="mb-3 d-flex align-items-center">
-              <label for="{{ field.id_for_label }}" class="me-3" style="width:180px;">
-                {{ field.label }}
-              </label>
-              <input
-                type="text"
-                name="{{ field.html_name }}"
-                readonly
-                class="form-control"
-                value="{{ service_request.pickup_location if field.name == 'pickup_location' else service_request.dropoff_location }}"
-              />
-            </div>
-          {% endif %}
-        {% else %}
-          {# Handle other fields normally #}
+        {% if can_edit_locations|default:False %}
           <div class="mb-3 d-flex align-items-center">
             <label for="{{ field.id_for_label }}" class="me-3" style="width:180px;">
               {{ field.label }}
             </label>
             {{ field }}
+          </div>
+        {% else %}
+          <div class="mb-3 d-flex align-items-center">
+            <label for="{{ field.id_for_label }}" class="me-3" style="width:180px;">
+              {{ field.label }}
+            </label>
+            <input
+              type="text"
+              name="{{ field.html_name }}"
+              readonly
+              class="form-control"
+              value="{{ service_request.pickup_location }}"
+            />
           </div>
         {% endif %}
         {# Display errors right after the field #}
@@ -73,17 +60,65 @@
           <div class="text-danger mb-2 ms-3">{{ field.errors }}</div>
         {% endif %}
       {% endif %}
-    {% endmacro %}
+    {% endwith %}
 
-    {# Call the macro for specific fields in order #}
-    {{ render_field(form.pickup_location, service_request, can_edit_locations) }}
-    {{ render_field(form.dropoff_location, service_request, can_edit_locations) }}
-    {{ render_field(form.description, service_request, can_edit_locations) }}
+    {# --- Dropoff Location --- #}
+    {% with field=form.dropoff_location %}
+      {% if field %}
+        {% if can_edit_locations|default:False %}
+          <div class="mb-3 d-flex align-items-center">
+            <label for="{{ field.id_for_label }}" class="me-3" style="width:180px;">
+              {{ field.label }}
+            </label>
+            {{ field }}
+          </div>
+        {% else %}
+          <div class="mb-3 d-flex align-items-center">
+            <label for="{{ field.id_for_label }}" class="me-3" style="width:180px;">
+              {{ field.label }}
+            </label>
+            <input
+              type="text"
+              name="{{ field.html_name }}"
+              readonly
+              class="form-control"
+              value="{{ service_request.dropoff_location }}"
+            />
+          </div>
+        {% endif %}
+        {% if field.errors %}
+          <div class="text-danger mb-2 ms-3">{{ field.errors }}</div>
+        {% endif %}
+      {% endif %}
+    {% endwith %}
+
+    {# --- Description Field --- #}
+    {% with field=form.description %}
+      {% if field %}
+        <div class="mb-3 d-flex align-items-center">
+          <label for="{{ field.id_for_label }}" class="me-3" style="width:180px;">
+            {{ field.label }}
+          </label>
+          {{ field }}
+        </div>
+        {% if field.errors %}
+          <div class="text-danger mb-2 ms-3">{{ field.errors }}</div>
+        {% endif %}
+      {% endif %}
+    {% endwith %}
 
     {# --- Render Remaining Fields --- #}
     {% for field in form %}
       {% if field.name != 'pickup_location' and field.name != 'dropoff_location' and field.name != 'description' %}
-         {{ render_field(field, service_request, can_edit_locations) }}
+         <div class="mb-3 d-flex align-items-center">
+           <label for="{{ field.id_for_label }}" class="me-3" style="width:180px;">
+             {{ field.label }}
+           </label>
+           {{ field }}
+         </div>
+         {% if field.errors %}
+           <div class="text-danger mb-2 ms-3">{{ field.errors }}</div>
+         {% endif %}
       {% endif %}
     {% endfor %}
 
@@ -120,11 +155,6 @@ document.addEventListener("DOMContentLoaded", function() {
       console.error("Map element not found!");
       return;
   }
-
-  // Attempt to read canEdit from a data attribute on the form or map, assuming it's passed
-  // We need to ensure 'can_edit_locations' is available to the JS if needed
-  // Let's assume it's NOT needed for the map display itself, only for form fields
-  // const canEdit = mapEl.dataset.canEdit === "true"; // This was in previous JS, ensure data-can-edit is set if needed
 
   // 1) Initialize map (Leaflet JS/CSS already loaded in base.html)
   const map = L.map("map").setView([0, 0], 2);
@@ -197,17 +227,10 @@ document.addEventListener("DOMContentLoaded", function() {
   const initialAddress = mapEl.dataset.address;
 
   // 4) Initial map setup and geocoding attempt
-  // Use requestAnimationFrame to ensure layout is stable before invalidating size
   requestAnimationFrame(() => {
       map.invalidateSize();
-      // Delay geocoding slightly to ensure map is ready
       setTimeout(() => geocodeAndUpdateMap(initialAddress), 150);
   });
-
-  // Note: Removed reverse geocoding, marker dragging, and geolocation watching
-  // as this seems to be the EDIT form where the map might just be for display.
-  // If the map on the EDIT form should be interactive (like the CREATE form),
-  // the relevant JS logic needs to be added back.
 
 });
 </script>
