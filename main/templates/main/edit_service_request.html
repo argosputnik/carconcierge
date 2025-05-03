@@ -2,9 +2,7 @@
 {% load static helpers %}
 
 {% block title %}Edit Service Request{% endblock %}
-{# Use main_class block to apply padding class to the main element #}
-{% block main_class %}main-padded-top{% endblock %}
-
+{% block main_class %}with-padding{% endblock %}
 
 {% block content %}
 <div class="container">
@@ -76,36 +74,15 @@
       {% endif %}
     {% endfor %}
 
-<div class="card mb-4"> {# Wrap map in a card #}
-    <div class="card-header">Location Map</div>
-    <div class="card-body">
-      <div
-        id="map"
-        {# Removed |escapejs from data-address #}
-        data-address="{{ service_request.pickup_location }}"
-        data-share="{{ service_request.share_location|yesno:'true,false' }}"
-        data-status="{{ service_request.status }}"
-      ></div>
-      {# Message element to show geocoding status #}
-      <div id="map-message" class="alert alert-info mt-2" style="display:none;">Finding location...</div>
-    </div>
-  </div>
+    {# Map container #}
+    <div
+      id="map"
+      data-can-edit="{{ can_edit_locations|yesno:'true,false' }}"
+      style="height:500px; border:1px solid #ccc; margin-bottom:1rem;"
+    ></div>
 
-
-    <div class="mt-4 mb-3">
-      <button type="submit" class="btn btn-dark">Save Changes</button>
-      {% if user.role == 'customer' %}
-        <a href="{% url 'customer_dashboard' %}" class="btn btn-secondary ms-2">Cancel</a>
-      {% elif user.role == 'concierge' %}
-        <a href="{% url 'concierge_dashboard' %}" class="btn btn-secondary ms-2">Cancel</a>
-      {% elif user.role == 'dealer' %}
-        <a href="{% url 'dealer_dashboard' %}" class="btn btn-secondary ms-2">Cancel</a>
-      {% elif user.role == 'owner' %}
-        <a href="{% url 'owner_dashboard' %}" class="btn btn-secondary ms-2">Cancel</a>
-      {% else %}
-        <a href="{% url 'home' %}" class="btn btn-secondary ms-2">Cancel</a>
-      {% endif %}
-    </div>
+    <button type="submit" class="btn btn-dark">Save Changes</button>
+    <a href="{% url 'customer_dashboard' %}" class="btn btn-secondary ms-2">Cancel</a>
   </form>
 </div>
 {% endblock %}
@@ -178,4 +155,3 @@
     });
   </script>
 {% endblock %}
-
