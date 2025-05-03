@@ -136,6 +136,7 @@
           data-address="{{ service_request.pickup_location }}"
           data-share="{{ service_request.share_location|yesno:'true,false' }}"
           data-status="{{ service_request.status }}"
+          style="height: 200px; width: 200px; border: 1px solid #ccc; margin: 0 auto;" {# Map style #}
         ></div>
         <div id="map-message" class="alert alert-info mt-2" style="display:none;">
           Finding location...
@@ -143,8 +144,7 @@
       </div>
     </div> {# End of Map Card #}
 
-       {# --- Buttons (Moved Below Map) --- #}
-    {# ADD THE CLASSES BACK TO THIS DIV #}
+    {# --- Buttons (Below Map) --- #}
     <div class="mt-4 text-center">
       <button type="submit" class="btn btn-dark me-2">Save Changes</button>
 
@@ -174,40 +174,10 @@
 
   </form> {# End of Form #}
 
-   
-
-      {# Dynamic Cancel Button URL based on user role #}
-      {% if request.user.role == 'customer' %}
-        <a href="{% url 'customer_dashboard' %}" class="btn btn-secondary">
-          Cancel
-        </a>
-      {% elif request.user.role == 'concierge' %}
-        <a href="{% url 'concierge_dashboard' %}" class="btn btn-secondary">
-          Cancel
-        </a>
-      {% elif request.user.role == 'dealer' %}
-        <a href="{% url 'dealer_dashboard' %}" class="btn btn-secondary">
-          Cancel
-        </a>
-      {% elif request.user.role == 'owner' %}
-        <a href="{% url 'owner_dashboard' %}" class="btn btn-secondary">
-          Cancel
-        </a>
-      {% else %}
-         {# Default cancel link if role is not explicitly handled or user is anonymous #}
-         {# You might want to link to the previous page or a generic home page #}
-         <a href="{% url 'home' %}" class="btn btn-secondary">
-           Cancel
-         </a>
-      {% endif %}
-    </div>
-
-  </form> {# End of Form #}
 </div> {# End of Container #}
 {% endblock %}
 
 {% block scripts %}
-{# Paste the existing script block here #}
 <script>
 document.addEventListener("DOMContentLoaded", function() {
   const mapEl = document.getElementById("map");
@@ -235,9 +205,12 @@ document.addEventListener("DOMContentLoaded", function() {
       }
   }
 
-  // 2) Geocode address and update map (No reverse geocode needed for display-only map)
+  // 2) Geocode address and update map
   function geocodeAndUpdateMap(address) {
-      if (!address || address.trim() === "") {
+      // Ensure address is treated as a string, even if it's null/undefined initially
+      const addressStr = String(address || "").trim();
+
+      if (!addressStr) {
           console.warn("No pickup address provided for map.");
           updateMapMessage("Pickup address not available.", "warning");
           map.setView([0, 0], 2); // Reset view if no address
@@ -245,13 +218,15 @@ document.addEventListener("DOMContentLoaded", function() {
       }
 
       updateMapMessage("Finding location...", "info"); // Show finding message
-      const geocodingAddress = address.replace(/\n/g, ' ').trim();
+      // Replace multiple spaces/newlines that might result from bad data
+      const geocodingAddress = addressStr.replace(/\s+/g, ' ').trim();
       console.log("Map attempting to geocode:", geocodingAddress);
 
       fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(geocodingAddress)}&limit=1`)
         .then(response => {
           if (!response.ok) {
-            throw new Error(`Geocoding HTTP error! Status: ${response.status}`);
+            // Provide more context in the error
+            throw new Error(`Geocoding HTTP error! Status: ${response.status} for address: ${geocodingAddress}`);
           }
           return response.json();
         })
@@ -267,20 +242,24 @@ document.addEventListener("DOMContentLoaded", function() {
               if (marker) map.removeLayer(marker); // Remove old marker if exists
               marker = L.marker([lat, lon])
                .addTo(map)
-               .bindPopup(`<b>Pickup:</b><br>${address.replace(/\n/g, '<br>')}`)
+               // Use original addressStr for popup to show what's stored
+               .bindPopup(`<b>Pickup:</b><br>${addressStr.replace(/\n/g, '<br>')}`)
                .openPopup();
               updateMapMessage("", "info"); // Hide message on success
             } else {
+              console.error("Invalid coordinates received from geocoding:", data[0]);
               throw new Error("Invalid coordinates received.");
             }
           } else {
             console.warn("Map geocoding found no results for:", geocodingAddress);
-            updateMapMessage(`Could not find location for: "${geocodingAddress}".`, "warning");
+            // Show the address it failed to find
+            updateMapMessage(`Could not find location for: "${geocodingAddress}". Please check the address.`, "warning");
           }
         })
         .catch(error => {
           console.error("Map geocoding process error:", error);
-          updateMapMessage(`Error finding location: ${error.message}.`, "danger");
+          // Display a more informative error message
+          updateMapMessage(`Error finding location: ${error.message}. Check address format.`, "danger");
         });
   }
 
@@ -293,11 +272,11 @@ document.addEventListener("DOMContentLoaded", function() {
       if (mapEl.offsetParent !== null) {
           map.invalidateSize();
       } else {
-          // If map is initially hidden (e.g., in a tab), invalidate when it becomes visible
-          // This might require observing visibility changes
           console.warn("Map container might be hidden initially. Invalidation might be needed later.");
+          // Consider adding an observer if the map is in a tab/accordion
       }
-      setTimeout(() => geocodeAndUpdateMap(initialAddress), 150);
+      // Delay geocoding slightly to ensure map is ready and size is calculated
+      setTimeout(() => geocodeAndUpdateMap(initialAddress), 250);
   });
 
 });
