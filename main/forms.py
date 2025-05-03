@@ -114,24 +114,75 @@ class ServiceRequestForm(BootstrapFormMixin, forms.Form):
 class EditRequestForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = ServiceRequest
-        fields = ['description', 'pickup_location', 'dropoff_location', 'status', 'assigned_to']
+        # Ensure all fields intended to be on the form are listed
+        fields = [
+            'pickup_location',
+            'dropoff_location',
+            'description',
+            'status',
+            'assigned_to',
+            'job_type', # Added job_type if it should be editable/visible
+            # Add other relevant fields if necessary
+        ]
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 4}),
+            # Add widgets for other fields if needed
+        }
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
 
-        if user:
-            if user.role == 'customer':
-                self.fields['status'].disabled = True
-                self.fields['assigned_to'].disabled = True
-            elif user.role == 'concierge':
-                self.fields['assigned_to'].queryset = User.objects.filter(role='concierge')
-            elif user.role == 'dealer':
-                self.fields['assigned_to'].queryset = User.objects.filter(role='dealer')
-            else:
-                self.fields['assigned_to'].queryset = User.objects.none()
+        # Determine who can edit sensitive fields
+        can_edit_sensitive_fields = user and user.role in ['concierge', 'owner']
+        # Determine who can edit location fields (adjust logic as needed)
+        can_edit_locations = user and user.role in ['concierge', 'owner', 'customer']
 
-        self.fields['assigned_to'].required = False
+        # --- Disable/Enable Status ---
+        if 'status' in self.fields:
+            if not can_edit_sensitive_fields:
+                self.fields['status'].disabled = True
+            else:
+                self.fields['status'].disabled = False # Explicitly enable
+
+        # --- Disable/Enable Assigned To & Set Queryset ---
+        if 'assigned_to' in self.fields:
+            if not can_edit_sensitive_fields:
+                self.fields['assigned_to'].disabled = True
+                # Optional: Clear queryset when disabled
+                self.fields['assigned_to'].queryset = User.objects.none()
+            else:
+                self.fields['assigned_to'].disabled = False # Explicitly enable
+                # Define who can BE assigned (e.g., Concierges and Dealers)
+                assignable_roles = ['concierge', 'dealer']
+                self.fields['assigned_to'].queryset = User.objects.filter(
+                    role__in=assignable_roles
+                ).order_by('first_name', 'last_name')
+                self.fields['assigned_to'].required = False # Make assignment optional
+
+        # --- Disable/Enable Location Fields ---
+        # This makes the template logic for locations simpler if desired
+        if 'pickup_location' in self.fields:
+            if not can_edit_locations:
+                self.fields['pickup_location'].widget.attrs['readonly'] = True
+                self.fields['pickup_location'].widget.attrs['class'] += ' form-control-plaintext' # Optional styling
+            else:
+                 self.fields['pickup_location'].widget.attrs.pop('readonly', None)
+                 self.fields['pickup_location'].widget.attrs['class'] = self.fields['pickup_location'].widget.attrs['class'].replace(' form-control-plaintext', '')
+
+
+        if 'dropoff_location' in self.fields:
+            if not can_edit_locations:
+                self.fields['dropoff_location'].widget.attrs['readonly'] = True
+                self.fields['dropoff_location'].widget.attrs['class'] += ' form-control-plaintext' # Optional styling
+            else:
+                 self.fields['dropoff_location'].widget.attrs.pop('readonly', None)
+                 self.fields['dropoff_location'].widget.attrs['class'] = self.fields['dropoff_location'].widget.attrs['class'].replace(' form-control-plaintext', '')
+
+        # Ensure 'assigned_to' is not required if it might be disabled or unassigned
+        if 'assigned_to' in self.fields:
+             self.fields['assigned_to'].required = False
+
 
 # --------------------------
 # Car Forms
