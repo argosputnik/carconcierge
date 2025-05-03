@@ -143,9 +143,38 @@
       </div>
     </div> {# End of Map Card #}
 
+       {# --- Buttons (Moved Below Map) --- #}
+    {# ADD THE CLASSES BACK TO THIS DIV #}
+    <div class="mt-4 text-center">
+      <button type="submit" class="btn btn-dark me-2">Save Changes</button>
 
-    {# --- Buttons (Moved Below Map) --- #}
-    <div><button type="submit" class="btn btn-dark me-2">Save Changes</button>
+      {# Dynamic Cancel Button URL based on user role #}
+      {% if request.user.role == 'customer' %}
+        <a href="{% url 'customer_dashboard' %}" class="btn btn-secondary">
+          Cancel
+        </a>
+      {% elif request.user.role == 'concierge' %}
+        <a href="{% url 'concierge_dashboard' %}" class="btn btn-secondary">
+          Cancel
+        </a>
+      {% elif request.user.role == 'dealer' %}
+        <a href="{% url 'dealer_dashboard' %}" class="btn btn-secondary">
+          Cancel
+        </a>
+      {% elif request.user.role == 'owner' %}
+        <a href="{% url 'owner_dashboard' %}" class="btn btn-secondary">
+          Cancel
+        </a>
+      {% else %}
+         <a href="{% url 'home' %}" class="btn btn-secondary">
+           Cancel
+         </a>
+      {% endif %}
+    </div>
+
+  </form> {# End of Form #}
+
+   
 
       {# Dynamic Cancel Button URL based on user role #}
       {% if request.user.role == 'customer' %}
