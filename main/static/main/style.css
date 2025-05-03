@@ -288,7 +288,8 @@ th a:hover {
   padding-right: 0.25rem;
 }
 
-.map   {
-  height: 200px;
-  width: 200px;
-  }
+.card.mb-4 #map {  /* Target the map inside the card */
+  height: 200px !important;
+  width: 200px !important;
+  margin: 0 auto;
+}
