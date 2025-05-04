@@ -9,10 +9,9 @@
 <div class="container">
   <h2>Edit Service Request</h2>
 
-    <div class="d-flex justify-content-center gap-3 mb-4">
+  <div class="d-flex justify-content-center gap-3 mb-4">
     {% include 'main/_dashboard_buttons.html' %}
   </div>
-
 
   <form method="post">
     {% csrf_token %}
@@ -34,8 +33,6 @@
         value="{% if service_request.customer %}{{ service_request.customer.get_full_name }}{% else %}Unknown{% endif %}"
       />
     </div>
-
-    {# --- Render Fields in Specific Order --- #}
 
     {# --- Pickup Location --- #}
     {% with field=form.pickup_location %}
@@ -99,25 +96,41 @@
       {% endif %}
     {% endwith %}
 
-    {# --- Description Field --- #}
-    {% with field=form.description %}
-      {% if field %}
-        <div class="mb-3 d-flex align-items-center">
-          <label for="{{ field.id_for_label }}" class="me-3" style="width:180px;">
-            {{ field.label }}
-          </label>
-          {{ field }}
-        </div>
-        {% if field.errors %}
-          <div class="text-danger mb-2 ms-3">{{ field.errors }}</div>
+    {# --- Job Type and Description in one row --- #}
+    <div class="mb-3 d-flex">
+      {% for field in form %}
+        {% if field.name == 'job_type' %}
+          <div class="d-flex align-items-center me-3" style="width:300px;">
+            <label for="{{ field.id_for_label }}" class="me-3" style="width:180px;">
+              {{ field.label }}
+            </label>
+            {{ field }}
+            {% if field.errors %}
+              <div class="text-danger mb-2 ms-3">{{ field.errors }}</div>
+            {% endif %}
+          </div>
         {% endif %}
-      {% endif %}
-    {% endwith %}
+      {% endfor %}
+      
+      {% with field=form.description %}
+        {% if field %}
+          <div class="d-flex align-items-center flex-grow-1">
+            <label for="{{ field.id_for_label }}" class="me-3" style="width:100px;">
+              {{ field.label }}
+            </label>
+            {{ field }}
+            {% if field.errors %}
+              <div class="text-danger mb-2 ms-3">{{ field.errors }}</div>
+            {% endif %}
+          </div>
+        {% endif %}
+      {% endwith %}
+    </div>
 
     {# --- Render Remaining Fields (including status and assigned_to) --- #}
     {# The form's __init__ now controls if status/assigned_to are disabled #}
     {% for field in form %}
-      {% if field.name != 'pickup_location' and field.name != 'dropoff_location' and field.name != 'description' %}
+      {% if field.name != 'pickup_location' and field.name != 'dropoff_location' and field.name != 'description' and field.name != 'job_type' %}
          <div class="mb-3 d-flex align-items-center">
            <label for="{{ field.id_for_label }}" class="me-3" style="width:180px;">
              {{ field.label }}
@@ -130,8 +143,6 @@
       {% endif %}
     {% endfor %}
 
-    {# REMOVED the explicit read-only "Assigned To" block, as the form field handles it now #}
-
     {# --- Map Section --- #}
     <div class="card mb-4">
       <div class="card-header">Location Map</div>
@@ -141,7 +152,7 @@
           data-address="{{ service_request.pickup_location }}"
           data-share="{{ service_request.share_location|yesno:'true,false' }}"
           data-status="{{ service_request.status }}"
-          {# Size must be set via CSS #}
+          style="height: 400px; width: 100%;" {# Added explicit size #}
         ></div>
       </div>
        <div id="map-message" class="alert alert-info mt-2 mx-3" style="display:none;">
@@ -150,28 +161,27 @@
     </div> {# End of Map Card #}
 
     {# --- Buttons (Below Map) --- #}
-    <div class="mt-4 text-center">
-      <button type="submit" class="btn btn-dark me-2">Save Changes</button>
+    <div class="mt-4 text-center" style="margin-bottom: 30px;"> {# Added bottom margin #}
+      <button type="submit" class="btn btn-dark me-2" style="display: inline-block;">Save Changes</button>
       {# Dynamic Cancel Button URL based on user role #}
-      {% comment %} (Cancel button logic remains the same) {% endcomment %}
       {% if request.user.role == 'customer' %}
-        <a href="{% url 'customer_dashboard' %}" class="btn btn-secondary">
+        <a href="{% url 'customer_dashboard' %}" class="btn btn-secondary" style="display: inline-block;">
           Cancel
         </a>
       {% elif request.user.role == 'concierge' %}
-        <a href="{% url 'concierge_dashboard' %}" class="btn btn-secondary">
+        <a href="{% url 'concierge_dashboard' %}" class="btn btn-secondary" style="display: inline-block;">
           Cancel
         </a>
       {% elif request.user.role == 'dealer' %}
-        <a href="{% url 'dealer_dashboard' %}" class="btn btn-secondary">
+        <a href="{% url 'dealer_dashboard' %}" class="btn btn-secondary" style="display: inline-block;">
           Cancel
         </a>
       {% elif request.user.role == 'owner' %}
-        <a href="{% url 'owner_dashboard' %}" class="btn btn-secondary">
+        <a href="{% url 'owner_dashboard' %}" class="btn btn-secondary" style="display: inline-block;">
           Cancel
         </a>
       {% else %}
-         <a href="{% url 'home' %}" class="btn btn-secondary">
+         <a href="{% url 'home' %}" class="btn btn-secondary" style="display: inline-block;">
            Cancel
          </a>
       {% endif %}
