@@ -133,7 +133,7 @@ class EditRequestForm(BootstrapFormMixin, forms.ModelForm):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
 
-{%comment %}
+{% comment %}
 # Determine who can edit sensitive fields
         can_edit_sensitive_fields = user and user.role in ['concierge', 'owner']
         # Determine who can edit location fields (adjust logic as needed)
