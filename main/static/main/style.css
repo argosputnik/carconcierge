@@ -235,8 +235,18 @@ th a:hover {
     padding-bottom: 80px; /* Extra space for mobile */
   }
 
+  /*------------------
   .main-content {
     padding: 0 15px;
+  }
+-------------------*/
+
+
+@media (max-width: 576px) {
+  /* Ensure top padding is enough so h2 isn’t hidden below the fixed header */
+  .main-content.main-padded-top {
+    padding-top: 70px; /* Adjust as necessary; make sure it exceeds header height */
+    padding-bottom: 10px;
   }
 
   th, td {
