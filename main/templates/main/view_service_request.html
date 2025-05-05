@@ -57,8 +57,9 @@
       <div
         id="map"
         {# Removed |escapejs from data-address #}
-        data-address="{{ service_request.pickup_location }}"
-        data-share="{{ service_request.share_location|yesno:'true,false' }}"
+	{#data-address="{{ service_request.pickup_location }}"#}
+	data-address="{{ service_request.pickup_location|linebreaksbr|striptags|escapejs }}"
+	data-share="{{ service_request.share_location|yesno:'true,false' }}"
         data-status="{{ service_request.status }}"
       ></div>
       {# Message element to show geocoding status #}
