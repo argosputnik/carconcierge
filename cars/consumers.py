@@ -1,10 +1,7 @@
-# consumers.py
-
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.contrib.auth import get_user_model
-from main.models import ServiceRequest
 
 User = get_user_model()
 
@@ -66,6 +63,7 @@ class LocationConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def has_permission(self, user, request_id):
+        from main.models import ServiceRequest  # <-- Move import here
         try:
             sr = ServiceRequest.objects.get(id=request_id)
             return (
@@ -78,6 +76,7 @@ class LocationConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def update_location(self, request_id, lat, lng):
+        from main.models import ServiceRequest  # <-- Move import here
         try:
             sr = ServiceRequest.objects.get(id=request_id)
             sr.concierge_latitude = lat
