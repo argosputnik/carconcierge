@@ -235,11 +235,9 @@ th a:hover {
     padding-bottom: 80px; /* Extra space for mobile */
   }
 
-  /*------------------
   .main-content {
     padding: 0 15px;
   }
--------------------*/
 
 
 @media (max-width: 576px) {
