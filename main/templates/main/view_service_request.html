@@ -140,7 +140,10 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     // Clean up the address for geocoding
-  //  const geocodingAddress = address.replace(/\n/g, ' ').trim();
+   const geocodingAddress = address
+  .replace(/(\\u000A|\\n|\\r|\n|\r)+/g, ', ')
+  .replace(/\s{2,}/g, ' ')
+  .trim();
    // console.log("Address prepared for geocoding:", geocodingAddress);
 
    const geocodingAddress = address.replace(/[\n\r]+/g, ', ').replace(/\s{2,}/g, ' ').trim();
