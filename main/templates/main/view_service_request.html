@@ -58,7 +58,7 @@
         id="map"
         {# Removed |escapejs from data-address #}
 	{#data-address="{{ service_request.pickup_location }}"#}
-	data-address="{{ service_request.pickup_location|linebreaksbr|striptags|escapejs }}"
+	data-address="{{ service_request.pickup_location|escapejs }}"
 	data-share="{{ service_request.share_location|yesno:'true,false' }}"
         data-status="{{ service_request.status }}"
       ></div>
