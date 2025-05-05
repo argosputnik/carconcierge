@@ -140,8 +140,11 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     // Clean up the address for geocoding
-    const geocodingAddress = address.replace(/\n/g, ' ').trim();
-    console.log("Address prepared for geocoding:", geocodingAddress);
+  //  const geocodingAddress = address.replace(/\n/g, ' ').trim();
+   // console.log("Address prepared for geocoding:", geocodingAddress);
+
+   const geocodingAddress = address.replace(/[\n\r]+/g, ', ').replace(/\s{2,}/g, ' ').trim();
+console.log("Address sent to geocoder:", geocodingAddress);
 
     fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(geocodingAddress)}&limit=1`)
       .then(response => {
