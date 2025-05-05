@@ -1,4 +1,6 @@
 from django.urls import re_path
+from cars.consumers import MyConsumer
+
 
 # Use a late-binding approach
 websocket_urlpatterns = [
