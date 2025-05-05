@@ -3,18 +3,17 @@
 
 {% block title %}Service Request #{{ service_request.id }}{% endblock %}
 
-{# Use main_class block to apply padding class to the main element #}
 {% block main_class %}main-padded-top{% endblock %}
 
 {% block content %}
-<div class="container"> {# Use a container for centering and responsiveness #}
-  <h2 class="mb-4 text-center">Service Request Details</h2> {# Added text-center for consistency #}
+<div class="container">
+  <h2 class="mb-4 text-center">Service Request Details</h2>
 
-  <div class="d-flex justify-content-center gap-3 mb-4"> {# Increased bottom margin slightly for separation #}
+  <div class="d-flex justify-content-center gap-3 mb-4">
     {% include 'main/_dashboard_buttons.html' %}
   </div>
 
-  <div class="card mb-4"> {# Wrap details in a card for better visual structure #}
+  <div class="card mb-4">
     <div class="card-header">Request Information</div>
     <div class="card-body">
       <dl class="row">
@@ -22,7 +21,7 @@
         <dd class="col-sm-9">{{ service_request.id }}</dd>
 
         <dt class="col-sm-3">Requested At</dt>
-        <dd class="col-sm-9">{{ service_request.requested_at|date:"Y-m-d H:i" }}</dd> {# Corrected date format dash #}
+        <dd class="col-sm-9">{{ service_request.requested_at|date:"Y-m-d H:i" }}</dd>
 
         <dt class="col-sm-3">Pickup Location</dt>
         <dd class="col-sm-9" style="white-space: pre-line;">{{ service_request.pickup_location }}</dd>
@@ -36,7 +35,7 @@
         <dt class="col-sm-3">Assigned To</dt>
         <dd class="col-sm-9">
           {% if service_request.assigned_to %}
-            {{ service_request.assigned_to.get_full_name|default:"Assigned User" }} {# Added default #}
+            {{ service_request.assigned_to.get_full_name|default:"Assigned User" }}
           {% else %}
             <em>Unassigned</em>
           {% endif %}
@@ -50,77 +49,70 @@
     </div>
   </div>
 
-
-  <div class="card mb-4"> {# Wrap map in a card #}
+  <div class="card mb-4">
     <div class="card-header">Location Map</div>
     <div class="card-body">
       <div
         id="map"
-        {# Removed |escapejs from data-address #}
-	{#data-address="{{ service_request.pickup_location }}"#}
-	data-address="{{ service_request.pickup_location|escapejs }}"
-	data-share="{{ service_request.share_location|yesno:'true,false' }}"
+        style="height: 300px;"  {# Ensure the map is visible #}
+        data-address="{{ service_request.pickup_location|escapejs }}"
+        data-share="{{ service_request.share_location|yesno:'true,false' }}"
         data-status="{{ service_request.status }}"
       ></div>
-      {# Message element to show geocoding status #}
       <div id="map-message" class="alert alert-info mt-2" style="display:none;">Finding location...</div>
     </div>
   </div>
 
-
-  <div class="mt-4 text-center"> {# Centered buttons #}
-    {# Adjust the back link URL based on the user's role if needed #}
+  <div class="mt-4 text-center">
     {% if request.user.role == 'customer' %}
-      <a href="{% url 'customer_dashboard' %}" class="btn btn-secondary me-2">
-        ← Back to Dashboard
-      </a>
+      <a href="{% url 'customer_dashboard' %}" class="btn btn-secondary me-2">← Back to Dashboard</a>
     {% elif request.user.role == 'concierge' %}
-      <a href="{% url 'concierge_dashboard' %}" class="btn btn-secondary me-2">
-        ← Back to Dashboard
-      </a>
+      <a href="{% url 'concierge_dashboard' %}" class="btn btn-secondary me-2">← Back to Dashboard</a>
     {% elif request.user.role == 'dealer' %}
-      <a href="{% url 'dealer_dashboard' %}" class="btn btn-secondary me-2">
-        ← Back to Dashboard
-      </a>
+      <a href="{% url 'dealer_dashboard' %}" class="btn btn-secondary me-2">← Back to Dashboard</a>
     {% elif request.user.role == 'owner' %}
-      <a href="{% url 'owner_dashboard' %}" class="btn btn-secondary me-2">
-        ← Back to Dashboard
-      </a>
+      <a href="{% url 'owner_dashboard' %}" class="btn btn-secondary me-2">← Back to Dashboard</a>
     {% else %}
-       {# Default back link if role is not explicitly handled #}
-       <a href="{% url 'home' %}" class="btn btn-secondary me-2">
-         ← Back
-       </a>
+      <a href="{% url 'home' %}" class="btn btn-secondary me-2">← Back</a>
     {% endif %}
 
-    {# Check permission before showing edit button #}
     {% if request.user == service_request.customer or request.user.role == 'concierge' or request.user.role == 'dealer' or request.user.role == 'owner' %}
-      <a href="{% url 'edit_service_request' service_request.id %}" class="btn btn-primary">
-        Edit
-      </a>
+      <a href="{% url 'edit_service_request' service_request.id %}" class="btn btn-primary">Edit</a>
     {% endif %}
   </div>
 </div>
-{% endblock %} {# End of block content #}
-
+{% endblock %}
 
 {% block scripts %}
 <script>
 document.addEventListener("DOMContentLoaded", function() {
   const mapEl = document.getElementById("map");
   const messageEl = document.getElementById("map-message");
-  if (!mapEl) return; // Exit if map element doesn't exist
+  if (!mapEl) return;
 
   // Get data from attributes
-  const address = mapEl.dataset.address; // Raw address string
+  const address = mapEl.dataset.address;
   const share   = mapEl.dataset.share === "true";
   const status  = mapEl.dataset.status;
-  const role    = "{{ request.user.role|escapejs }}"; // Role needs escaping
+  const role    = "{{ request.user.role|escapejs }}";
 
-  console.log("Pickup address read from data-address:", address);
+  // Decode unicode escapes (e.g., \u000A) to real newlines
+  function decodeUnicode(str) {
+    return str.replace(/\\u([\dA-F]{4})/gi, function (match, grp) {
+      return String.fromCharCode(parseInt(grp, 16));
+    });
+  }
 
-  // 1) Initialize map with a basic world view
-  const map = L.map("map").setView([0, 0], 2); // Start zoomed out
+  // Clean up the address for geocoding
+  const decodedAddress = decodeUnicode(address);
+  const geocodingAddress = decodedAddress
+    .replace(/[\n\r]+/g, ', ')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+  console.log("Address sent to geocoder:", geocodingAddress);
+
+  // Initialize map
+  const map = L.map("map").setView([0, 0], 2);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "© OpenStreetMap contributors",
     maxZoom: 19,
@@ -129,25 +121,15 @@ document.addEventListener("DOMContentLoaded", function() {
   // Show the "Finding location..." message immediately
   messageEl.style.display = "block";
 
-  // Function to geocode the address and update the map
+  // Geocode and update map
   function geocodeAndUpdateMap() {
-    if (!address || address.trim() === "") {
-        console.warn("No pickup address provided or address is empty.");
-        messageEl.textContent = "Pickup address is missing or empty.";
-        messageEl.className = "alert alert-danger mt-2";
-        messageEl.style.display = "block";
-        return;
+    if (!geocodingAddress || geocodingAddress.trim() === "") {
+      console.warn("No pickup address provided or address is empty.");
+      messageEl.textContent = "Pickup address is missing or empty.";
+      messageEl.className = "alert alert-danger mt-2";
+      messageEl.style.display = "block";
+      return;
     }
-
-    // Clean up the address for geocoding
-   const geocodingAddress = address
-  .replace(/(\\u000A|\\n|\\r|\n|\r)+/g, ', ')
-  .replace(/\s{2,}/g, ' ')
-  .trim();
-   // console.log("Address prepared for geocoding:", geocodingAddress);
-
-   const geocodingAddress = address.replace(/[\n\r]+/g, ', ').replace(/\s{2,}/g, ' ').trim();
-console.log("Address sent to geocoder:", geocodingAddress);
 
     fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(geocodingAddress)}&limit=1`)
       .then(response => {
@@ -164,8 +146,8 @@ console.log("Address sent to geocoder:", geocodingAddress);
           const lon = parseFloat(data[0].lon);
 
           if (isNaN(lat) || isNaN(lon)) {
-             console.error("Invalid coordinates received:", data[0]);
-             throw new Error("Invalid coordinates received from geocoding service.");
+            console.error("Invalid coordinates received:", data[0]);
+            throw new Error("Invalid coordinates received from geocoding service.");
           }
 
           console.log(`Geocoding successful. Coordinates: ${lat}, ${lon}`);
@@ -173,13 +155,12 @@ console.log("Address sent to geocoder:", geocodingAddress);
           // Update map view and add marker
           map.setView([lat, lon], 15);
           L.marker([lat, lon])
-           .addTo(map)
-           .bindPopup(`<b>Pickup:</b><br>${address.replace(/\n/g, '<br>')}`)
-           .openPopup();
+            .addTo(map)
+            .bindPopup(`<b>Pickup:</b><br>${decodedAddress.replace(/\n/g, '<br>')}`)
+            .openPopup();
 
           // Hide the message element on success
           messageEl.style.display = "none";
-
         } else {
           console.warn("Geocoding found no results for:", geocodingAddress);
           messageEl.textContent = `Could not find location for: "${geocodingAddress}". Please verify the address details.`;
@@ -197,14 +178,12 @@ console.log("Address sent to geocoder:", geocodingAddress);
 
   // Invalidate map size and attempt geocoding shortly after map initializes
   requestAnimationFrame(() => {
-      map.invalidateSize();
-      setTimeout(geocodeAndUpdateMap, 150);
+    map.invalidateSize();
+    setTimeout(geocodeAndUpdateMap, 150);
   });
-
 
   // 2) Live tracking when Delivery and shared
   if (status === "Delivery" && share) {
-    // Setup WebSocket connection
     const ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
     const socketUrl = ws_scheme + '://' + window.location.host +
                       '/ws/location/{{ service_request.id }}/';
@@ -232,42 +211,42 @@ console.log("Address sent to geocoder:", geocodingAddress);
 
       socket.onmessage = function(e) {
         try {
-            const data = JSON.parse(e.data);
-            console.log("WebSocket message received:", data);
-            if (data.lat && data.lng) {
-              const ll = [parseFloat(data.lat), parseFloat(data.lng)];
+          const data = JSON.parse(e.data);
+          console.log("WebSocket message received:", data);
+          if (data.lat && data.lng) {
+            const ll = [parseFloat(data.lat), parseFloat(data.lng)];
 
-              if (isNaN(ll[0]) || isNaN(ll[1])) {
-                  console.error("Invalid coordinates received via WebSocket:", data);
-                  return;
-              }
-
-              if (!conciergeLocationMarker) {
-                console.log("Creating concierge marker at:", ll);
-                conciergeLocationMarker = L.marker(ll, {
-                  icon: L.icon({
-                    iconUrl: "{% static 'images/marker-icon-red.png' %}",
-		    iconSize:   [32, 32],
-                    iconAnchor: [16, 32],
-                    popupAnchor: [0, -32]
-                  })
-                })
-                .addTo(map)
-                .bindPopup("Concierge Location");
-              } else {
-                console.log("Updating concierge marker to:", ll);
-                conciergeLocationMarker.setLatLng(ll);
-              }
-            } else {
-               console.warn("WebSocket message missing lat/lng:", data);
+            if (isNaN(ll[0]) || isNaN(ll[1])) {
+              console.error("Invalid coordinates received via WebSocket:", data);
+              return;
             }
-        } catch (parseError) {
-            console.error("Failed to parse WebSocket message:", e.data, parseError);
-        }
-      }; // End of onmessage
-    } // End of connectWebSocket
 
-    connectWebSocket(); // Initial connection
+            if (!conciergeLocationMarker) {
+              console.log("Creating concierge marker at:", ll);
+              conciergeLocationMarker = L.marker(ll, {
+                icon: L.icon({
+                  iconUrl: "{% static 'images/marker-icon-red.png' %}",
+                  iconSize: [32, 32],
+                  iconAnchor: [16, 32],
+                  popupAnchor: [0, -32]
+                })
+              })
+              .addTo(map)
+              .bindPopup("Concierge Location");
+            } else {
+              console.log("Updating concierge marker to:", ll);
+              conciergeLocationMarker.setLatLng(ll);
+            }
+          } else {
+            console.warn("WebSocket message missing lat/lng:", data);
+          }
+        } catch (parseError) {
+          console.error("Failed to parse WebSocket message:", e.data, parseError);
+        }
+      };
+    }
+
+    connectWebSocket();
 
     if (role === "concierge" && navigator.geolocation) {
       console.log("Setting up geolocation watch for concierge");
@@ -278,33 +257,20 @@ console.log("Address sent to geocoder:", geocodingAddress);
         if (socket && socket.readyState === WebSocket.OPEN) {
           socket.send(JSON.stringify({ lat: lat, lng: lng }));
         } else {
-           console.warn("WebSocket not open, cannot send location.");
+          console.warn("WebSocket not open, cannot send location.");
         }
       },
       (geoError) => {
-         console.error("Geolocation error:", geoError);
+        console.error("Geolocation error:", geoError);
       },
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 });
-    } // End of if (role === "concierge")
+    }
+  }
 
-    // Optional: Initial fetch
-    // Using single-line comments instead of block comments to avoid nesting issues
-    // fetch("{% url 'service_request_location' service_request.id %}", { credentials: "same-origin" })
-    //   .then(r => { if (!r.ok) throw new Error(`Initial fetch failed: ${r.status}`); return r.json(); })
-    //   .then(data => { console.log("Initial location fetch:", data); if (data.lat && data.lng && !conciergeLocationMarker) { // Handle fetched data if needed } })
-    //   .catch(error => { console.error("Initial location fetch error:", error); });
-
-   } else if (status !== "Delivery") {
-     console.log("Location tracking is not active for this request status.");
-   } else if (!share) {
-     console.log("Location sharing is not enabled for this request.");
-   }
-         
-   // Invalidate map size on tab/accordion changes if map is in a hidden container initially
-   // This is important if the map div is inside a collapsible Bootstrap element
-   requestAnimationFrame(() => {
-     map.invalidateSize();
-   });
- });     
- </script>
- {% endblock %}
+  // Invalidate map size on tab/accordion changes if map is in a hidden container initially
+  requestAnimationFrame(() => {
+    map.invalidateSize();
+  });
+});
+</script>
+{% endblock %}
