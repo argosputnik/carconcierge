@@ -239,8 +239,8 @@ document.addEventListener("DOMContentLoaded", function() {
                 console.log("Creating concierge marker at:", ll);
                 conciergeLocationMarker = L.marker(ll, {
                   icon: L.icon({
-                    iconUrl: "{% static 'images/concierge-icon.png' %}",
-                    iconSize:   [32, 32],
+                    iconUrl: "{% static 'images/marker-icon-red.png' %}",
+		    iconSize:   [32, 32],
                     iconAnchor: [16, 32],
                     popupAnchor: [0, -32]
                   })
