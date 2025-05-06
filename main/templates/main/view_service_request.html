@@ -108,6 +108,17 @@ document.addEventListener("DOMContentLoaded", function() {
       }
   }
 
+  // Format address for geocoding
+  function formatAddress(address) {
+    // Replace escaped newline characters (\u000A) with spaces or commas
+    return address
+      .replace(/\\u000A/g, ', ') // Replace \u000A with comma and space
+      .split('\n') // Split by actual newline characters (less likely after replace)
+      .map(line => line.trim())
+      .filter(line => line)
+      .join(', ');
+  }
+
   // Function to geocode an address and update the map with a single marker
   function geocodeAndDisplayPickupLocation(address) {
       const addressStr = String(address || "").trim();
@@ -119,7 +130,8 @@ document.addEventListener("DOMContentLoaded", function() {
       }
 
       updateMapMessage("Finding pickup location...", "info");
-      const geocodingAddress = addressStr.replace(/\s+/g, ' ').trim();
+      // Use the formatAddress function to clean the address for geocoding
+      const geocodingAddress = formatAddress(addressStr);
       console.log("Map attempting to geocode pickup:", geocodingAddress);
 
       fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(geocodingAddress)}&limit=1`)
@@ -153,7 +165,7 @@ document.addEventListener("DOMContentLoaded", function() {
                   })
               })
                .addTo(map)
-               .bindPopup(`<b>Pickup:</b><br>${addressStr.replace(/\n/g, '<br>')}`)
+               .bindPopup(`<b>Pickup:</b><br>${addressStr.replace(/\\u000A/g, '<br>')}`) // Keep original escaped newlines for popup display
                .openPopup(); // Open the popup on load
 
               map.setView([lat, lon], 15); // Set view and zoom on the pickup location
@@ -191,10 +203,8 @@ document.addEventListener("DOMContentLoaded", function() {
     setTimeout(() => geocodeAndDisplayPickupLocation(pickupAddress), 250);
   });
 
-  // Remove the WebSocket logic for live tracking as it's not needed for just pickup location
-  // if (status === "Delivery" && share) {
-  //   // ... [Previous WebSocket code remains the same] ...
-  // }
+  // Removed WebSocket logic for live tracking
+
 });
 </script>
 {% endblock %}
