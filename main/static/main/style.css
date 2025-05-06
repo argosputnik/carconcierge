@@ -42,7 +42,7 @@ main {
 
 /* Add a new class for pages that need top padding */
 .main-padded-top {
-  padding-top: 100px; /* Adjust value as needed, maybe slightly more than header height */
+  padding-top: 20px; /* Adjust value as needed, maybe slightly more than header height */
   padding-bottom: 20px;
 }
 
@@ -275,7 +275,7 @@ i}
 @media (max-width: 576px) {
   /* Ensure top padding is enough so h2 isn’t hidden below the fixed header */
   .main-content.main-padded-top {
-    padding-top: 20px; /* Adjust as necessary; make sure it exceeds header height */
+    padding-top: 70px; /* Adjust as necessary; make sure it exceeds header height */
     padding-bottom: 10px;
   }
 
