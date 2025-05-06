@@ -147,8 +147,9 @@
   </header>
 
   <!-- Scrollable Content Area -->
-  <main class="flex-fill {% block main_class %}{% endblock %}">
-    {# This is the main content block for individual pages to fill #}
+  <main class="flex-fill {% block main_class %}main-padded-top{% endblock %}">
+  
+  {# This is the main content block for individual pages to fill #}
     {% block content %}{% endblock %}
 
     {% if messages %}
