@@ -1,11 +1,12 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
-from main.models import ServiceRequest  # Adjust this import based on your project structure
 
 class LocationConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def get_service_request(self, request_id):
+        # Import the model inside the method
+        from main.models import ServiceRequest
         try:
             return ServiceRequest.objects.get(id=request_id)
         except ServiceRequest.DoesNotExist:
