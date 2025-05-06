@@ -267,11 +267,15 @@ def view_service_request(request, request_id):
 def edit_service_request(request, request_id):
     sr = get_object_or_404(ServiceRequest, id=request_id)
     # permission to view
+    # It's good practice to check edit permission too if it's different from view
     if (
         request.user != sr.customer
         and request.user.role not in ['concierge','dealer','owner']
     ):
-        return HttpResponseForbidden("No permission to view this request.")
+        return HttpResponseForbidden("No permission to view or edit this request.")
+
+    # The 'can_edit_locations' flag is still useful for template logic
+    # This determines if the location fields are rendered as editable or read-only
     can_edit_locations = (
         request.user == sr.customer or request.user.role == 'owner'
     )
@@ -279,13 +283,22 @@ def edit_service_request(request, request_id):
     if request.method == 'POST':
         form = EditRequestForm(request.POST, instance=sr, user=request.user)
         if form.is_valid():
+            # Let the form handle saving the data to the instance
+            # This includes pickup_location and dropoff_location from hidden fields
             updated = form.save(commit=False)
 
-            if can_edit_locations:
-                updated.pickup_location = request.POST.get('pickup_location', sr.pickup_location)
-                updated.dropoff_location = request.POST.get('dropoff_location', sr.dropoff_location)
+            # REMOVE these lines - the form.save() already handles locations
+            # We previously added hidden inputs in the template,
+            # so the form now receives the correct data even for read-only fields.
+            # Manual assignment from request.POST is unnecessary and caused the corruption.
+            # if can_edit_locations:
+            #     updated.pickup_location = request.POST.get('pickup_location', sr.pickup_location)
+            #     updated.dropoff_location = request.POST.get('dropoff_location', sr.dropoff_location)
 
+            # Process other form fields and logic
             status = form.cleaned_data['status']
+
+            # Logic for status changes and assignments
             # concierge → Delivery
             if status == 'Delivery' and request.user.role == 'concierge':
                 updated.assigned_to     = request.user
@@ -293,24 +306,50 @@ def edit_service_request(request, request_id):
             # dealer → In service
             elif status == 'In service' and request.user.role == 'dealer':
                 updated.share_location = False
-            # all others → unassign
+            # all others → unassign (Handles cases where status changes to something else, or by owner/customer)
             else:
-                updated.assigned_to     = None
-                updated.share_location = False
+                # Only unassign if the current user is allowed to change assignment
+                # You might want to refine this logic based on roles if needed
+                if request.user.role in ['concierge', 'owner']: # Only allowed roles can unassign
+                     updated.assigned_to     = None
+                updated.share_location = False # Assuming sharing is off unless Delivery by concierge
 
+            # Save the instance with all changes from the form and view logic
             updated.save()
             messages.success(request, "Service request updated.")
-            return redirect(f"{request.user.role}_dashboard")
+
+            # Redirect based on the user's role
+            # Use request.user.role directly as it's more reliable and covers all cases
+            if request.user.role == 'customer':
+                return redirect('customer_dashboard')
+            elif request.user.role == 'concierge':
+                return redirect('concierge_dashboard')
+            elif request.user.role == 'dealer':
+                return redirect('dealer_dashboard')
+            elif request.user.role == 'owner':
+                 return redirect('owner_dashboard')
+            else:
+                 # Fallback for unexpected roles
+                 return redirect('home') # Or a more appropriate landing page
+
     else:
+        # GET request: Initialize form with existing instance data
         form = EditRequestForm(instance=sr, user=request.user)
 
-    return render(request, 'main/edit_service_request.html', {
+    # Prepare context for the template
+    context = {
         'form': form,
         'service_request': sr,
+        # You might not need to pass concierges/dealers explicitly if the form field handles queryset
+        # But keep them if they are used elsewhere in the template
         'concierges': User.objects.filter(role='concierge'),
         'dealers':    User.objects.filter(role='dealer'),
-        'can_edit_locations': can_edit_locations,
-    })
+        'can_edit_locations': can_edit_locations, # Still needed for template logic
+    }
+
+    return render(request, 'main/edit_service_request.html', context)
+
+
 
 @login_required
 def delete_service_request(request, request_id):
