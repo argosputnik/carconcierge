@@ -111,7 +111,7 @@ document.addEventListener("DOMContentLoaded", function() {
   // Format address for geocoding
   function formatAddress(address) {
     // Replace escaped newline characters (\u000A) with spaces or commas
-    return address
+    return String(address || "") // Ensure address is a string and handle potential null/undefined
       .replace(/\\u000A/g, ', ') // Replace \u000A with comma and space
       .split('\n') // Split by actual newline characters (less likely after replace)
       .map(line => line.trim())
