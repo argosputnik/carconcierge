@@ -151,7 +151,7 @@ def owner_dashboard(request):
     # Get sort parameters from request
     sort_field = request.GET.get('sort', 'requested_at')
     sort_direction = request.GET.get('dir', 'desc')
-    
+
     # Define valid sort fields to prevent SQL injection
     valid_sort_fields = {
         'requested_at': 'requested_at',
@@ -160,37 +160,37 @@ def owner_dashboard(request):
         'assigned_to': 'assigned_to__first_name',
         'description': 'description'
     }
-    
+
     # Use the sort field if it's valid, otherwise default to requested_at
     sort_field = valid_sort_fields.get(sort_field, 'requested_at')
-    
+
     # Apply the sort direction
     if sort_direction == 'asc':
         sort_field = sort_field
     else:  # default to desc
         sort_field = f'-{sort_field}'
-    
+
     # Apply sorting to service requests
     service_requests_list = ServiceRequest.objects.all().order_by(sort_field)
 
     # Service requests pagination
     sr_paginator = Paginator(service_requests_list, 5)  # Show 5 requests per page
-    sr_page_number = request.GET.get('sr_page') 
+    sr_page_number = request.GET.get('sr_page')
     service_requests = sr_paginator.get_page(sr_page_number)
-    
+
     # Get invoices with default sorting and pagination
     invoices_list = Invoice1.objects.all().order_by('-invoice_date')
     inv_paginator = Paginator(invoices_list, 5)  # Show 5 invoices per page
     inv_page_number = request.GET.get('inv_page')
     invoices1 = inv_paginator.get_page(inv_page_number)
-    
+
     context = {
         'service_requests': service_requests,
         'invoices1': invoices1,
         'current_sort': sort_field.lstrip('-'),
         'current_direction': sort_direction,
     }
-    
+
     return render(request, 'main/owner_dashboard.html', context)
 
 
@@ -315,7 +315,7 @@ def edit_service_request(request, request_id):
                 updated.share_location = False # Assuming sharing is off unless Delivery by concierge
 
             # Save the instance with all changes from the form and view logic
-            updated.save()
+            updated.save() # Save the instance with changes from the form
             messages.success(request, "Service request updated.")
 
             # Redirect based on the user's role
@@ -401,11 +401,7 @@ def edit_car(request, car_id):
     if request.method == 'POST':
         form = CarForm(request.POST, instance=car)
         if form.is_valid():
-            print(f"After save - updated.pickup_location: {updated.pickup_location}")
-        print(f"After save - updated.dropoff_location: {updated.dropoff_location}")
             updated = form.save(commit=False)
-            print(f"After save - updated.pickup_location: {updated.pickup_location}")
-        print(f"After save - updated.dropoff_location: {updated.dropoff_location}")
             updated.license_plate = updated.license_plate.upper()
             updated.save()
             messages.success(request, "Car updated successfully.")
@@ -703,4 +699,3 @@ def service_request_location(request, request_id):
         'lat': sr.concierge_latitude,
         'lng': sr.concierge_longitude,
     })
-
