@@ -84,8 +84,7 @@ footer {
 
 /* Ensure consistent vertical spacing after the h2 heading */
 .main-content h2 {
-  margin-top: .5em;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 /* Adjust dropdown positioning */
@@ -276,7 +275,7 @@ i}
 @media (max-width: 576px) {
   /* Ensure top padding is enough so h2 isn’t hidden below the fixed header */
   .main-content.main-padded-top {
-    padding-top: 70px; /* Adjust as necessary; make sure it exceeds header height */
+    padding-top: 20px; /* Adjust as necessary; make sure it exceeds header height */
     padding-bottom: 10px;
   }
 
