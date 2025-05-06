@@ -38,28 +38,27 @@
     {# --- Pickup Location --- #}
     {% with field=form.pickup_location %}
       {% if field %}
-        {# Keep this logic if you want different HTML for readonly locations #}
-        {% if can_edit_locations|default:False %}
-          <div class="mb-3 d-flex align-items-center">
-            <label for="{{ field.id_for_label }}" class="me-3" style="width:180px;">
-              {{ field.label }}
-            </label>
-            {{ field }}
-          </div>
-        {% else %}
-          <div class="mb-3 d-flex align-items-center">
-            <label for="{{ field.id_for_label }}" class="me-3" style="width:180px;">
-              {{ field.label }}
-            </label>
+        <div class="mb-3 d-flex align-items-center">
+          <label for="{{ field.id_for_label }}" class="me-3" style="width:180px;">
+            {{ field.label }}
+          </label>
+          {% if can_edit_locations|default:False %}
+            {{ field }} {# Render the editable form field #}
+          {% else %}
+            {# Display read-only text and include a hidden input for saving #}
             <input
               type="text"
-              name="{{ field.html_name }}"
               readonly
               class="form-control"
               value="{{ service_request.pickup_location }}"
             />
-          </div>
-        {% endif %}
+            <input
+              type="hidden"
+              name="{{ field.html_name }}" {# Use the correct form field name #}
+              value="{{ service_request.pickup_location }}" {# Pass the original value #}
+            />
+          {% endif %}
+        </div>
         {% if field.errors %}
           <div class="text-danger mb-2 ms-3">{{ field.errors }}</div>
         {% endif %}
@@ -69,28 +68,27 @@
     {# --- Dropoff Location --- #}
     {% with field=form.dropoff_location %}
       {% if field %}
-        {# Keep this logic if you want different HTML for readonly locations #}
-        {% if can_edit_locations|default:False %}
-          <div class="mb-3 d-flex align-items-center">
-            <label for="{{ field.id_for_label }}" class="me-3" style="width:180px;">
-              {{ field.label }}
-            </label>
-            {{ field }}
-          </div>
-        {% else %}
-          <div class="mb-3 d-flex align-items-center">
-            <label for="{{ field.id_for_label }}" class="me-3" style="width:180px;">
-              {{ field.label }}
-            </label>
+        <div class="mb-3 d-flex align-items-center">
+          <label for="{{ field.id_for_label }}" class="me-3" style="width:180px;">
+            {{ field.label }}
+          </label>
+          {% if can_edit_locations|default:False %}
+            {{ field }} {# Render the editable form field #}
+          {% else %}
+            {# Display read-only text and include a hidden input for saving #}
             <input
               type="text"
-              name="{{ field.html_name }}"
               readonly
               class="form-control"
               value="{{ service_request.dropoff_location }}"
             />
-          </div>
-        {% endif %}
+            <input
+              type="hidden"
+              name="{{ field.html_name }}" {# Use the correct form field name #}
+              value="{{ service_request.dropoff_location }}" {# Pass the original value #}
+            />
+          {% endif %}
+        </div>
         {% if field.errors %}
           <div class="text-danger mb-2 ms-3">{{ field.errors }}</div>
         {% endif %}
@@ -193,7 +191,7 @@
 {% endblock %}
 
 {% block scripts %}
-{# Script block remains the same #}
+{# Script block remains the same (from your original working edit page script) #}
 <script>
 document.addEventListener("DOMContentLoaded", function() {
   const mapEl = document.getElementById("map");
@@ -223,8 +221,16 @@ document.addEventListener("DOMContentLoaded", function() {
           return;
       }
       updateMapMessage("Finding location...", "info");
-      const geocodingAddress = addressStr.replace(/\s+/g, ' ').trim();
-      console.log("Map attempting to geocode:", geocodingAddress);
+      // Format address for geocoding (using a similar robust approach as the view page now)
+      const geocodingAddress = String(addressStr || "")
+        .replace(/\r\n|\r|\n/g, ', ')
+        .split(',')
+        .map(part => part.trim())
+        .filter(part => part)
+        .join(', ');
+
+      console.log("Edit Map attempting to geocode:", geocodingAddress); // Added "Edit Map" for clarity
+
       fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(geocodingAddress)}&limit=1`)
         .then(response => {
           if (!response.ok) {
@@ -233,31 +239,34 @@ document.addEventListener("DOMContentLoaded", function() {
           return response.json();
         })
         .then(data => {
-          console.log("Map geocoding results:", data);
+          console.log("Edit Map geocoding results:", data); // Added "Edit Map"
           if (data && data.length > 0) {
             const lat = parseFloat(data[0].lat);
             const lon = parseFloat(data[0].lon);
             if (!isNaN(lat) && !isNaN(lon)) {
-              console.log(`Map geocoding successful. Coordinates: ${lat}, ${lon}`);
+              console.log(`Edit Map geocoding successful. Coordinates: ${lat}, ${lon}`); // Added "Edit Map"
               map.setView([lat, lon], 15);
               if (marker) map.removeLayer(marker);
+              // Use the original address string for the popup, handling potential escaped newlines
               marker = L.marker([lat, lon])
                .addTo(map)
-               .bindPopup(`<b>Pickup:</b><br>${addressStr.replace(/\n/g, '<br>')}`)
+               .bindPopup(`<b>Pickup:</b><br>${String(addressStr || "").replace(/\\u000A/g, '<br>')}`)
                .openPopup();
               updateMapMessage("", "info");
             } else {
-              console.error("Invalid coordinates received from geocoding:", data[0]);
+              console.error("Edit Map Invalid coordinates received from geocoding:", data[0]); // Added "Edit Map"
               throw new Error("Invalid coordinates received.");
             }
           } else {
-            console.warn("Map geocoding found no results for:", geocodingAddress);
-            updateMapMessage(`Could not find location for: "${geocodingAddress}". Please check the address format in the database.`, "warning");
+            console.warn("Edit Map geocoding found no results for:", geocodingAddress); // Added "Edit Map"
+            updateMapMessage(`Could not find location for: "${geocodingAddress}". Please check the address format.`, "warning");
+             map.setView([41.7151, 44.8271], 12); // Fallback to a reasonable default view on edit
           }
         })
         .catch(error => {
-          console.error("Map geocoding process error:", error);
+          console.error("Edit Map geocoding process error:", error); // Added "Edit Map"
           updateMapMessage(`Error finding location: ${error.message}. Check address format.`, "danger");
+           map.setView([41.7151, 44.8271], 12); // Fallback to a reasonable default view on error
         });
   }
   const initialAddress = mapEl.dataset.address;
