@@ -12,42 +12,40 @@ import dj_database_url
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY
-SECRET_KEY = os.getenv("SECRET_KEY")               # set in Render Environment
-DEBUG      = os.getenv("DEBUG", "TRUE") == "True" # set DEBUG=True locally, False in prod
+SECRET_KEY = os.getenv("SECRET_KEY")
+DEBUG = os.getenv("DEBUG", "False") == "True"  # Default to False for production
 
 ALLOWED_HOSTS = [
-    os.getenv("RENDER_EXTERNAL_HOSTNAME"),  # e.g. carconcierge-xxxxx.onrender.com
+    os.getenv("RENDER_EXTERNAL_HOSTNAME"),
     "localhost",
+    "127.0.0.1",
     "24.199.122.100",
+    ".onrender.com",  # Allow all Render subdomains
 ]
 
 # ASGI setup
-ASGI_APPLICATION = "myproject.asgi.application"
+ASGI_APPLICATION = "cars.asgi.application"
 
-
-# channel layers for websockets/redis
+# Channel layers for websockets/redis
 CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer',
-        # For production, use Redis:
-        # 'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        # 'CONFIG': {
-        #     "hosts": [('127.0.0.1', 6379)],
-        # },
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+        "CONFIG": {
+            "hosts": [os.environ.get("REDIS_URL", "redis://127.0.0.1:6379")],
+        },
     },
 }
 
-
 # Application definition
 INSTALLED_APPS = [
-    "main.apps.MainConfig",  # your app
+    "channels",  # Move channels to the top
+    "main.apps.MainConfig",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "channels",
 ]
 
 AUTH_USER_MODEL = "main.User"
@@ -87,23 +85,12 @@ TEMPLATES = [
 WSGI_APPLICATION = "cars.wsgi.application"
 
 # Database
-#DATABASES = {
-#    "default": dj_database_url.config(
-#        default="postgresql://cars_user:yourpassword@localhost:5432/cars_db",
-#        conn_max_age=600,
-#    )
-#}
-
-
-# Database
 DATABASES = {
     "default": dj_database_url.config(
         default="postgresql://cars_db_fr93_user:k3Tg8Dh7yUyzscZcYNDPGXP5KIgpPPdI@localhost:5432/cars_db_fr93",
         conn_max_age=600,
     )
 }
-
-
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -115,16 +102,16 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Internationalization
 LANGUAGE_CODE = "en-us"
-TIME_ZONE     = "Asia/Tbilisi"
-USE_I18N      = True
-USE_TZ        = True
+TIME_ZONE = "Asia/Tbilisi"
+USE_I18N = True
+USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
-STATIC_URL  = "/static/"
+STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
-# (Optional) include app‑level static dirs in collectstatic
+# Include app‑level static dirs in collectstatic
 STATICFILES_DIRS = [
     BASE_DIR / "main" / "static",
 ]
@@ -134,23 +121,66 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Login redirect
 LOGIN_REDIRECT_URL = "/redirect-after-login/"
 
-# Logging debugging
+# Enhanced logging configuration
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': 'django.log',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
+            'propagate': True,
+        },
+        'django.channels': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'websockets': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': True,
         },
     },
     'root': {
         'handlers': ['console'],
         'level': 'INFO',
     },
-    'django': {
-        'handlers': ['console'],
-        'level': 'INFO',
-        'propagate': True,
-    },
 }
 
+# Security settings for production
+if not DEBUG:
+    # HTTPS settings
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = True
+
+    # HSTS settings
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_PRELOAD = True
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+
+    # Other security settings
+    SECURE_REFERRER_POLICY = "same-origin"
+    SECURE_BROWSER_XSS_FILTER = True
