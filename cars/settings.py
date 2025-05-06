@@ -121,7 +121,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Login redirect
 LOGIN_REDIRECT_URL = "/redirect-after-login/"
 
+LOGGING_CONFIG = None
+
+
 # Enhanced logging configuration
+"""
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -160,9 +164,10 @@ LOGGING = {
     },
     'root': {
         'handlers': ['console'],
-#        'level': 'INFO',
+        'level': 'INFO',
     },
 }
+"""
 
 # Security settings for production
 if not DEBUG:
