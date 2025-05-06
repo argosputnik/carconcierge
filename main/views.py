@@ -281,19 +281,70 @@ def edit_service_request(request, request_id):
     )
 
     if request.method == 'POST':
+        # --- Debugging Prints: Start of POST processing ---
+        print(f"--- Start of POST processing for SR {request_id} ---")
+        print(f"request.POST Type: {type(request.POST)}")
+        print(f"request.POST Data: {request.POST}") # Print the raw POST data
+
+        raw_pickup = request.POST.get('pickup_location', 'Not Found in POST')
+        raw_dropoff = request.POST.get('dropoff_location', 'Not Found in POST')
+
+        print(f"request.POST['pickup_location'] (raw): {raw_pickup}")
+        print(f"request.POST['dropoff_location'] (raw): {raw_dropoff}")
+        # --- End Debugging Prints ---
+
+
         form = EditRequestForm(request.POST, instance=sr, user=request.user)
+
         if form.is_valid():
+            # --- Debugging Prints: After form.is_valid() ---
+            print(f"form.is_valid() is True")
+            print(f"form.cleaned_data Type: {type(form.cleaned_data)}")
+            print(f"form.cleaned_data['pickup_location']: {form.cleaned_data['pickup_location']}")
+            print(f"form.cleaned_data['dropoff_location']: {form.cleaned_data['dropoff_location']}")
+
+            # Optional: Check encoding in cleaned_data if needed
+            try:
+                if 'pickup_location' in form.cleaned_data and form.cleaned_data['pickup_location']:
+                    pickup_bytes_cleaned = form.cleaned_data['pickup_location'].encode('utf-8', errors='replace')
+                    print(f"Pickup location UTF-8 bytes (cleaned): {pickup_bytes_cleaned}")
+            except Exception as e:
+                print(f"Error encoding pickup location in cleaned_data: {e}")
+
+            try:
+                 if 'dropoff_location' in form.cleaned_data and form.cleaned_data['dropoff_location']:
+                    dropoff_bytes_cleaned = form.cleaned_data['dropoff_location'].encode('utf-8', errors='replace')
+                    print(f"Dropoff location UTF-8 bytes (cleaned): {dropoff_bytes_cleaned}")
+            except Exception as e:
+                print(f"Error encoding dropoff location in cleaned_data: {e}")
+            # --- End Debugging Prints ---
+
+
             # Let the form handle saving the data to the instance
             # This includes pickup_location and dropoff_location from hidden fields
             updated = form.save(commit=False)
 
-            # REMOVE these lines - the form.save() already handles locations
-            # We previously added hidden inputs in the template,
-            # so the form now receives the correct data even for read-only fields.
-            # Manual assignment from request.POST is unnecessary and caused the corruption.
-            # if can_edit_locations:
-            #     updated.pickup_location = request.POST.get('pickup_location', sr.pickup_location)
-            #     updated.dropoff_location = request.POST.get('dropoff_location', sr.dropoff_location)
+            # --- Debugging Prints: After form.save(commit=False) ---
+            print(f"After form.save(commit=False) - updated instance state:")
+            print(f"updated.pickup_location: {updated.pickup_location}")
+            print(f"updated.dropoff_location: {updated.dropoff_location}")
+
+            # Optional: Check encoding in updated instance if needed
+            try:
+                if updated.pickup_location:
+                    pickup_bytes_updated = updated.pickup_location.encode('utf-8', errors='replace')
+                    print(f"Updated pickup location UTF-8 bytes: {pickup_bytes_updated}")
+            except Exception as e:
+                print(f"Error encoding updated pickup location: {e}")
+
+            try:
+                if updated.dropoff_location:
+                    dropoff_bytes_updated = updated.dropoff_location.encode('utf-8', errors='replace')
+                    print(f"Updated dropoff location UTF-8 bytes: {updated_dropoff_bytes}")
+            except Exception as e:
+                print(f"Error encoding updated dropoff location: {e}")
+            # --- End Debugging Prints ---
+
 
             # Process other form fields and logic
             status = form.cleaned_data['status']
@@ -316,6 +367,15 @@ def edit_service_request(request, request_id):
 
             # Save the instance with all changes from the form and view logic
             updated.save() # Save the instance with changes from the form
+
+            # --- Debugging Prints: After updated.save() ---
+            print(f"--- After updated.save() ---")
+            # At this point, you'd ideally query the database directly to confirm
+            # how the data was saved.
+            print(f"Service Request {updated.id} saved.")
+            # --- End Debugging Prints ---
+
+
             messages.success(request, "Service request updated.")
 
             # Redirect based on the user's role
@@ -332,9 +392,21 @@ def edit_service_request(request, request_id):
                  # Fallback for unexpected roles
                  return redirect('home') # Or a more appropriate landing page
 
+        else:
+            # --- Debugging Prints: Form is NOT valid ---
+            print(f"form.is_valid() is False - Errors: {form.errors}")
+            print(f"--- End of POST processing for SR {request_id} ---")
+            # --- End Debugging Prints ---
+
+
     else:
         # GET request: Initialize form with existing instance data
         form = EditRequestForm(instance=sr, user=request.user)
+        # --- Debugging Prints: GET request ---
+        print(f"--- GET request for SR {request_id} ---")
+        print(f"Initial sr.pickup_location: {sr.pickup_location}")
+        print(f"Initial sr.dropoff_location: {sr.dropoff_location}")
+        print(f"--- End of GET request ---")
 
     # Prepare context for the template
     context = {
