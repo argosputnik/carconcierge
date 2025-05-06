@@ -1,7 +1,7 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
-from src.models import ServiceRequest  # Adjust this import based on your project structure
+from main.models import ServiceRequest  # Adjust this import based on your project structure
 
 class LocationConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
