@@ -401,7 +401,11 @@ def edit_car(request, car_id):
     if request.method == 'POST':
         form = CarForm(request.POST, instance=car)
         if form.is_valid():
+            print(f"After save - updated.pickup_location: {updated.pickup_location}")
+        print(f"After save - updated.dropoff_location: {updated.dropoff_location}")
             updated = form.save(commit=False)
+            print(f"After save - updated.pickup_location: {updated.pickup_location}")
+        print(f"After save - updated.dropoff_location: {updated.dropoff_location}")
             updated.license_plate = updated.license_plate.upper()
             updated.save()
             messages.success(request, "Car updated successfully.")
