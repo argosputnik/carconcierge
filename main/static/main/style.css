@@ -29,9 +29,8 @@ html, body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  /* CRITICAL: Add padding to push content away from FIXED header/footer */
-  /*padding-top: 60px;    /* Must match header height */
-  /*padding-bottom: 60px; /* Must match footer height */
+  padding: 20px;
+  width: 100%;
    position: relative; */ /* Not strictly needed if header/footer are fixed */
 }
 
@@ -184,7 +183,8 @@ main.no-padding {
   display: block;
 }
 
-h2   {
+.main-content h2   {
+	margin-bottom: 1.5rem;
 	text-align: center;
 }
 
