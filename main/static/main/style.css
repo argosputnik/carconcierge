@@ -74,6 +74,36 @@ footer {
   justify-content: center;
 }
 
+/* Dashboard buttons positioning fix */
+.d-flex.gap-3.mb-3,
+.d-flex.flex-wrap.justify-content-center.gap-3.mb-3 {
+  margin-top: 1rem; /* Add some space at the top */
+  margin-bottom: 2rem !important; /* Override Bootstrap's mb-3 if needed */
+  align-items: center; /* Vertically center items */
+}
+
+/* Ensure consistent vertical spacing after the h2 heading */
+.main-content h2 {
+  margin-bottom: 1.5rem;
+}
+
+/* Adjust dropdown positioning */
+.dropdown-menu {
+  margin-top: 0.25rem; /* Fine-tune dropdown position */
+}
+
+/* Fix for nested dropdowns */
+.dropdown-submenu .dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -1px;
+}
+
+.dashboard-buttons {
+  margin: 1.5rem 0;
+  padding: 0.5rem 0;
+}
+
 
 /* ----- Simplified Hero Styles for Centering & Visibility ----- */
 
@@ -191,6 +221,7 @@ main.no-padding {
 .mb-4   {
    text-align: center;
    }
+
 
 /* -------------------- Table Styles -------------------- */
 .table-responsive {

@@ -1,6 +1,5 @@
 {% if user.role == 'owner' %}
-<div class="d-flex flex-wrap justify-content-center gap-3 mb-3">
-
+<div class="dashboard-buttons d-flex flex-wrap justify-content-center gap-3">
 
     <!-- Users Dropdown -->
     <div class="btn-group">
@@ -61,7 +60,8 @@
 
 
 {% else %}
-<div class="d-flex gap-3 mb-3">
+<div class="dashboard-buttons d-flex justify-content-center gap-3">
+
 
   {% if user.role == 'customer' %}
     <!-- Only customers see these -->

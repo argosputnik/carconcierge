@@ -9,7 +9,7 @@
     {% include 'main/_dashboard_buttons.html' %}
   </div>
 
-  <p>You have {{ open_request_count }} service request{{ open_request_count|pluralize }} matching your filter.</p>
+  <p class="text-center">You have {{ open_request_count }} service request{{ open_request_count|pluralize }} matching your filter.</p>
 
   <!-- Filter dropdown form -->
   <form method="get" class="mb-3">
@@ -55,7 +55,7 @@
     </tbody>
   </table>
   {% else %}
-    <p>There are 0 service requests with this status.</p>
+    <p class="text-center">There are 0 service requests with this status.</p>
   {% endif %}
 
   <!-- Invoice Table -->
