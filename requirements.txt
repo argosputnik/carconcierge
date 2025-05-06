@@ -13,5 +13,6 @@ whitenoise==6.9.0
 channels==4.2.2
 daphne==4.1.2
 uvicorn[standard]
-websocketsi
+websockets==11.0.3
 redis>=4.0.0
+\channels-redis==4.1.0
