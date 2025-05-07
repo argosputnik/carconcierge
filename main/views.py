@@ -801,5 +801,3 @@ def update_concierge_location(request, request_id):
             return HttpResponseForbidden("Invalid location data.")
     except Exception as e:
         return HttpResponseServerError(f"An error occurred: {str(e)}")
-
-_**Note:** Response was truncated due to length limits._
