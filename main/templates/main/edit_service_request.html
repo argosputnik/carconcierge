@@ -14,7 +14,7 @@
     {% include 'main/_dashboard_buttons.html' %}
   </div>
 
-  <form method="post">
+  <form method="post" id="edit-service-request-form"> {# Added ID to the form #}
     {% csrf_token %}
 
     {# --- Display Non-Field Errors First --- #}
@@ -42,21 +42,22 @@
           <label for="{{ field.id_for_label }}" class="me-3" style="width:180px;">
             {{ field.label }}
           </label>
-          {% if can_edit_locations|default:False %}
-            {{ field }} {# Render the editable form field #}
+          {# Use field.field.widget.attrs to check readonly status set in the form #}
+          {% if field.field.widget.attrs.readonly %}
+             {# Display read-only text and include a hidden input for saving #}
+             <input
+               type="text"
+               readonly
+               class="form-control-plaintext form-control" {# Use form-control-plaintext for styling #}
+               value="{{ field.value|default:'' }}"
+             />
+             <input
+               type="hidden"
+               name="{{ field.html_name }}"
+               value="{{ field.value|default:'' }}"
+             />
           {% else %}
-            {# Display read-only text and include a hidden input for saving #}
-            <input
-              type="text"
-              readonly
-              class="form-control"
-              value="{{ service_request.pickup_location }}"
-            />
-            <input
-              type="hidden"
-              name="{{ field.html_name }}" {# Use the correct form field name #}
-              value="{{ service_request.pickup_location }}" {# Pass the original value #}
-            />
+             {{ field }} {# Render the editable form field #}
           {% endif %}
         </div>
         {% if field.errors %}
@@ -72,21 +73,22 @@
           <label for="{{ field.id_for_label }}" class="me-3" style="width:180px;">
             {{ field.label }}
           </label>
-          {% if can_edit_locations|default:False %}
-            {{ field }} {# Render the editable form field #}
-          {% else %}
+           {# Use field.field.widget.attrs to check readonly status set in the form #}
+          {% if field.field.widget.attrs.readonly %}
             {# Display read-only text and include a hidden input for saving #}
             <input
               type="text"
               readonly
-              class="form-control"
-              value="{{ service_request.dropoff_location }}"
+              class="form-control-plaintext form-control" {# Use form-control-plaintext for styling #}
+              value="{{ field.value|default:'' }}"
             />
             <input
               type="hidden"
-              name="{{ field.html_name }}" {# Use the correct form field name #}
-              value="{{ service_request.dropoff_location }}" {# Pass the original value #}
+              name="{{ field.html_name }}"
+              value="{{ field.value|default:'' }}"
             />
+          {% else %}
+             {{ field }} {# Render the editable form field #}
           {% endif %}
         </div>
         {% if field.errors %}
@@ -110,7 +112,7 @@
           </div>
         {% endif %}
       {% endfor %}
-      
+
       {% with field=form.description %}
         {% if field %}
           <div class="d-flex align-items-center flex-grow-1">
@@ -126,21 +128,26 @@
       {% endwith %}
     </div>
 
-    {# --- Render Remaining Fields (including status and assigned_to) --- #}
-    {# The form's __init__ now controls if status/assigned_to are disabled #}
+    {# --- Render Remaining Fields (including status, assigned_to, and hidden location fields) --- #}
     {% for field in form %}
-      {% if field.name != 'pickup_location' and field.name != 'dropoff_location' and field.name != 'description' and field.name != 'job_type' %}
+      {# Exclude fields already rendered above #}
+      {% if field.name not in 'pickup_location,dropoff_location,description,job_type' %}
          <div class="mb-3 d-flex align-items-center">
            <label for="{{ field.id_for_label }}" class="me-3" style="width:180px;">
              {{ field.label }}
            </label>
-           {{ field }} {# This will render enabled or disabled based on form logic #}
+           {{ field }} {# This will render enabled, disabled, or hidden based on form logic #}
          </div>
          {% if field.errors %}
            <div class="text-danger mb-2 ms-3">{{ field.errors }}</div>
          {% endif %}
       {% endif %}
     {% endfor %}
+    {# Render any hidden fields (like the location fields) #}
+    {% for hidden in form.hidden_fields %}
+      {{ hidden }}
+    {% endfor %}
+
 
     {# --- Map Section --- #}
     <div class="card mb-4">
@@ -148,9 +155,9 @@
       <div class="card-body d-flex justify-content-center">
         <div
           id="map"
-          data-address="{{ service_request.pickup_location }}"
-          data-share="{{ service_request.share_location|yesno:'true,false' }}"
-          data-status="{{ service_request.status }}"
+          style="height: 400px;" {# Added height for map #}
+          data-address="{{ service_request.pickup_location|escapejs }}"
+          {# Removed unnecessary data attributes like share/status if not used for initial map #}
         ></div>
       </div>
        <div id="map-message" class="alert alert-info mt-2 mx-3" style="display:none;">
@@ -191,7 +198,7 @@
 {% endblock %}
 
 {% block scripts %}
-{# Script block remains the same (from your original working edit page script) #}
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script> {# Ensure Leaflet is included #}
 <script>
 document.addEventListener("DOMContentLoaded", function() {
   const mapEl = document.getElementById("map");
@@ -203,8 +210,9 @@ document.addEventListener("DOMContentLoaded", function() {
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "© OpenStreetMap contributors"
   }).addTo(map);
-  let marker = null;
+  let pickupMarker = null; // Use a specific variable for the pickup marker
   const messageEl = document.getElementById("map-message");
+
   function updateMapMessage(text, type = 'info') {
       if (messageEl) {
           messageEl.textContent = text;
@@ -212,24 +220,29 @@ document.addEventListener("DOMContentLoaded", function() {
           messageEl.style.display = text ? 'block' : 'none';
       }
   }
-  function geocodeAndUpdateMap(address) {
+
+  // Format address for geocoding
+  function formatAddress(address) {
+    return String(address || "")
+      .replace(/\\u000A/g, ', ')
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line)
+      .join(', ');
+  }
+
+  function geocodeAndDisplayPickupLocation(address) {
       const addressStr = String(address || "").trim();
       if (!addressStr) {
           console.warn("No pickup address provided for map.");
           updateMapMessage("Pickup address not available.", "warning");
-          map.setView([0, 0], 2);
+          map.setView([41.7151, 44.8271], 12); // Set a default view if no address
           return;
       }
-      updateMapMessage("Finding location...", "info");
-      // Format address for geocoding (using a similar robust approach as the view page now)
-      const geocodingAddress = String(addressStr || "")
-        .replace(/\r\n|\r|\n/g, ', ')
-        .split(',')
-        .map(part => part.trim())
-        .filter(part => part)
-        .join(', ');
 
-      console.log("Edit Map attempting to geocode:", geocodingAddress); // Added "Edit Map" for clarity
+      updateMapMessage("Finding pickup location...", "info");
+      const geocodingAddress = formatAddress(addressStr);
+      console.log("Edit Map attempting to geocode pickup:", geocodingAddress);
 
       fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(geocodingAddress)}&limit=1`)
         .then(response => {
@@ -239,36 +252,51 @@ document.addEventListener("DOMContentLoaded", function() {
           return response.json();
         })
         .then(data => {
-          console.log("Edit Map geocoding results:", data); // Added "Edit Map"
+          console.log("Edit Map geocoding results for pickup:", data);
           if (data && data.length > 0) {
             const lat = parseFloat(data[0].lat);
             const lon = parseFloat(data[0].lon);
+
             if (!isNaN(lat) && !isNaN(lon)) {
-              console.log(`Edit Map geocoding successful. Coordinates: ${lat}, ${lon}`); // Added "Edit Map"
-              map.setView([lat, lon], 15);
-              if (marker) map.removeLayer(marker);
-              // Use the original address string for the popup, handling potential escaped newlines
-              marker = L.marker([lat, lon])
+              console.log(`Edit Map geocoding successful for pickup. Coordinates: ${lat}, ${lon}`);
+
+              if (pickupMarker) {
+                  map.removeLayer(pickupMarker);
+              }
+
+              pickupMarker = L.marker([lat, lon], {
+                  icon: L.icon({
+                      iconUrl: "{% static 'images/marker-icon-blue.png' %}", // Use blue marker for pickup
+                      iconSize: [25, 41],
+                      iconAnchor: [12, 41],
+                      popupAnchor: [1, -34]
+                  })
+              })
                .addTo(map)
-               .bindPopup(`<b>Pickup:</b><br>${String(addressStr || "").replace(/\\u000A/g, '<br>')}`)
+               .bindPopup(`<b>Pickup:</b><br>${addressStr.replace(/\\u000A/g, '<br>')}`)
                .openPopup();
+
+              map.setView([lat, lon], 15);
+
               updateMapMessage("", "info");
+
             } else {
-              console.error("Edit Map Invalid coordinates received from geocoding:", data[0]); // Added "Edit Map"
+              console.error("Edit Map Invalid coordinates received from geocoding for pickup:", data[0]);
               throw new Error("Invalid coordinates received.");
             }
           } else {
-            console.warn("Edit Map geocoding found no results for:", geocodingAddress); // Added "Edit Map"
-            updateMapMessage(`Could not find location for: "${geocodingAddress}". Please check the address format.`, "warning");
-             map.setView([41.7151, 44.8271], 12); // Fallback to a reasonable default view on edit
+            console.warn("Edit Map geocoding found no results for pickup:", geocodingAddress);
+            updateMapMessage(`Could not find pickup location for: "${geocodingAddress}". Please check the address format.`, "warning");
+             map.setView([41.7151, 44.8271], 12);
           }
         })
         .catch(error => {
-          console.error("Edit Map geocoding process error:", error); // Added "Edit Map"
+          console.error("Edit Map geocoding process error for pickup:", error);
           updateMapMessage(`Error finding location: ${error.message}. Check address format.`, "danger");
-           map.setView([41.7151, 44.8271], 12); // Fallback to a reasonable default view on error
+           map.setView([41.7151, 44.8271], 12);
         });
   }
+
   const initialAddress = mapEl.dataset.address;
   requestAnimationFrame(() => {
       if (mapEl.offsetParent !== null) {
@@ -276,7 +304,107 @@ document.addEventListener("DOMContentLoaded", function() {
       } else {
           console.warn("Map container might be hidden initially. Invalidation might be needed later.");
       }
-      setTimeout(() => geocodeAndUpdateMap(initialAddress), 250);
+      setTimeout(() => geocodeAndDisplayPickupLocation(initialAddress), 250);
+  });
+
+  // --- Geolocation Logic for Concierge ---
+  const form = document.getElementById('edit-service-request-form');
+  const assignedToSelect = form.querySelector('[name="assigned_to"]'); // Get the assigned_to select element
+  const statusSelect = form.querySelector('[name="status"]'); // Get the status select element
+  const conciergeLatitudeInput = form.querySelector('[name="concierge_latitude"]'); // Get the hidden input
+  const conciergeLongitudeInput = form.querySelector('[name="concierge_longitude"]'); // Get the hidden input
+
+  // Get initial values from template context (need to pass these from the view)
+  const initialAssignedToId = "{{ assigned_user_id|default:'' }}";
+  const currentUserId = "{{ request.user.id }}"; // Assuming request.user is available
+  const currentUserRole = "{{ request.user.role }}"; // Assuming request.user is available
+  const initialStatus = "{{ service_request.status }}"; // Get initial status
+
+  form.addEventListener('submit', function(event) {
+      let getConciergeLocation = false;
+
+      // Check if the current user is a concierge AND they are changing the status to 'Delivery'
+      if (currentUserRole === 'concierge' && statusSelect) {
+          const newStatus = statusSelect.value;
+
+          // Condition: Status is changing to 'Delivery'
+          if (newStatus === 'Delivery' && initialStatus !== 'Delivery') {
+              // Further check: Is the request assigned to this concierge?
+              // Check both the initial assignment and the potentially new assignment from the form
+              const newAssignedToId = assignedToSelect ? assignedToSelect.value : null;
+              const isAssignedToThisConcierge = (initialAssignedToId === currentUserId) || (newAssignedToId === currentUserId);
+
+              if (isAssignedToThisConcierge) {
+                  getConciergeLocation = true;
+                  console.log("Concierge is setting status to Delivery and assigned to self - attempting to get location.");
+              } else if (newAssignedToId === currentUserId && assignedToSelect) {
+                  // This handles the case where the concierge was not assigned but is assigning themselves
+                  getConciergeLocation = true;
+                   console.log("Concierge is assigning to self and setting to Delivery - attempting to get location.");
+              }
+          }
+      }
+
+      if (getConciergeLocation) {
+           event.preventDefault(); // Prevent default form submission until location is obtained
+
+           if (navigator.geolocation) {
+               updateMapMessage("Getting your current location for delivery...", "info");
+               navigator.geolocation.getCurrentPosition(function(position) {
+                   const latitude = position.coords.latitude;
+                   const longitude = position.coords.longitude;
+                   console.log("Concierge Location Obtained:", { latitude, longitude });
+
+                   // Populate hidden input fields
+                   if (conciergeLatitudeInput) conciergeLatitudeInput.value = latitude;
+                   if (conciergeLongitudeInput) conciergeLongitudeInput.value = longitude;
+
+                   updateMapMessage("", "info"); // Clear location message
+
+                   // Submit the form programmatically now that location is added
+                   form.submit();
+
+               }, function(error) {
+                   console.error("Error getting concierge location:", error);
+                   let errorMessage = "Could not get your current location for location sharing.";
+                   switch (error.code) {
+                       case error.PERMISSION_DENIED:
+                           errorMessage += " Please allow location access in your browser settings.";
+                           break;
+                       case error.POSITION_UNAVAILABLE:
+                           errorMessage += " Location information is unavailable.";
+                           break;
+                       case error.TIMEOUT:
+                           errorMessage += " The request to get your location timed out.";
+                           break;
+                       default:
+                           errorMessage += " An unknown error occurred.";
+                           break;
+                   }
+                   updateMapMessage(errorMessage, "warning");
+
+                   // Decide how to handle the error - either still submit without location
+                   // or completely prevent submission. Submitting without location might be
+                   // better than preventing the entire form update.
+                   // If you prevent submission, uncomment:
+                   // event.preventDefault();
+
+                   // For now, let's allow submission but clear the location fields
+                   if (conciergeLatitudeInput) conciergeLatitudeInput.value = '';
+                   if (conciergeLongitudeInput) conciergeLongitudeInput.value = '';
+                   form.submit(); // Submit even without location
+
+               });
+           } else {
+               console.warn("Geolocation is not supported by this browser.");
+               updateMapMessage("Your browser does not support geolocation. Location sharing will not be available.", "warning");
+               // Still allow form submission
+               form.submit();
+           }
+      } else {
+           // If not getting concierge location, allow default form submission
+           console.log("Not getting concierge location, submitting form normally.");
+      }
   });
 });
 </script>
