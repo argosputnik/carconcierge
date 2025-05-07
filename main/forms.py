@@ -102,10 +102,8 @@ class ServiceRequestForm(BootstrapFormMixin, forms.Form):
         super().__init__(*args, **kwargs)
 
     def clean_pickup_location(self):
-        raw = self.cleaned_data['pickup_location']
-        # split on commas (or however), then re-join with \n
-        parts = [p.strip() for p in raw.split(',') if p.strip()]
-        return "\n".join(parts)
+        data = self.cleaned_data['pickup_location']
+        return data.replace('\n', ', ').replace('\r', ', ')
 
 
 # --------------------------
