@@ -791,6 +791,15 @@ def update_concierge_location(request, request_id):
         longitude = data.get('lng')
 
         if latitude is not None and longitude is not None:
-            sr.concierge_latitude  =
+            sr.concierge_latitude = latitude
+            sr.concierge_longitude = longitude
+            sr.share_location = True
+            sr.save()
+            messages.success(request, "Location updated successfully.")
+            return HttpResponse("Location updated successfully.")
+        else:
+            return HttpResponseForbidden("Invalid location data.")
+    except Exception as e:
+        return HttpResponseServerError(f"An error occurred: {str(e)}")
 
 _**Note:** Response was truncated due to length limits._
