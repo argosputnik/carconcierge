@@ -801,3 +801,43 @@ def update_concierge_location(request, request_id):
             return HttpResponseForbidden("Invalid location data.")
     except Exception as e:
         return HttpResponseServerError(f"An error occurred: {str(e)}")
+
+# In main/views.py
+
+# ... other imports and views ...
+
+@login_required # Or use appropriate permissions
+def service_request_location(request, request_id):
+    """
+    View to provide the live location of a service request.
+    """
+    try:
+        # Get the ServiceRequest object
+        service_request = get_object_or_404(ServiceRequest, id=request_id)
+
+        # Implement your logic to get the location.
+        # This might involve checking if the concierge is sharing location
+        # and retrieving their last reported location from the ServiceRequest model
+        # or another location-tracking mechanism.
+
+        # Example: Assuming location is stored in the ServiceRequest model
+        if service_request.share_location and service_request.concierge_latitude is not None and service_request.concierge_longitude is not None:
+            location_data = {
+                'latitude': service_request.concierge_latitude,
+                'longitude': service_request.concierge_longitude,
+                'request_id': service_request.id,
+                # Add any other relevant data like timestamp, status, etc.
+            }
+            return JsonResponse(location_data)
+        else:
+            # Return a response indicating location is not available or not being shared
+            return JsonResponse({'status': 'location_not_available'}, status=404) # Or a more appropriate status code
+
+    except Http404:
+        return JsonResponse({'status': 'error', 'message': 'Service request not found.'}, status=404)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+# ... rest of your views ...
+
+
