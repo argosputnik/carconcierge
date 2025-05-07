@@ -173,7 +173,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initMap([0,0], 2);
   }
 
-{% comment %}
 	if (navigator.geolocation) {
     navigator.geolocation.watchPosition(onGeoSuccess, onGeoError, {
       enableHighAccuracy: true, maximumAge: 0, timeout: 15000
@@ -182,7 +181,6 @@ document.addEventListener('DOMContentLoaded', () => {
     console.warn('Geolocation not supported.');
     onGeoError({ message: 'Unsupported' });
   }
-{% endcomment %}
 
   // Optional: format address lines into an #address-display element
   const display = document.getElementById('address-display');
