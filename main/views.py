@@ -264,7 +264,7 @@ def view_service_request(request, request_id):
         return HttpResponseForbidden("No permission to view this request.")
 
     # Pass the URL for the location API endpoint to the template
-    location_api_url = reverse('service_request_location', kwargs={'request_id': sr.id})
+    location_api_url = reverse('update_concierge_location', kwargs={'request_id': sr.id})
 
     return render(request, 'main/view_service_request.html', {
         'service_request': sr,
