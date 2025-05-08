@@ -42,7 +42,7 @@
           <label for="{{ field.id_for_label }}" class="me-3" style="width:180px;">
             {{ field.label }}
           </label>
-          {# Use field.field.widget.attrs to check readonly status set in the form #}
+          {# Check if the widget is marked as readonly in the form #}
           {% if field.field.widget.attrs.readonly %}
              {# Display read-only text and include a hidden input for saving #}
              <input
@@ -73,7 +73,7 @@
           <label for="{{ field.id_for_label }}" class="me-3" style="width:180px;">
             {{ field.label }}
           </label>
-           {# Use field.field.widget.attrs to check readonly status set in the form #}
+           {# Check if the widget is marked as readonly in the form #}
           {% if field.field.widget.attrs.readonly %}
             {# Display read-only text and include a hidden input for saving #}
             <input
@@ -128,22 +128,23 @@
       {% endwith %}
     </div>
 
-    {# --- Render Remaining Fields (including status, assigned_to, and hidden location fields) --- #}
+    {# --- Render Remaining VISIBLE Fields (status and assigned_to) --- #}
     {% for field in form %}
-      {# Exclude fields already rendered above #}
-      {% if field.name not in 'pickup_location,dropoff_location,description,job_type' %}
+      {# Only render fields that are NOT hidden and NOT already rendered above #}
+      {% if field.name not in 'pickup_location,dropoff_location,description,job_type' and field.is_hidden == False %}
          <div class="mb-3 d-flex align-items-center">
            <label for="{{ field.id_for_label }}" class="me-3" style="width:180px;">
              {{ field.label }}
            </label>
-           {{ field }} {# This will render enabled, disabled, or hidden based on form logic #}
+           {{ field }} {# This will render enabled or disabled based on form logic #}
          </div>
          {% if field.errors %}
            <div class="text-danger mb-2 ms-3">{{ field.errors }}</div>
          {% endif %}
       {% endif %}
     {% endfor %}
-    {# Render any hidden fields (like the location fields) #}
+
+    {# --- Render all HIDDEN Fields (like the location fields) --- #}
     {% for hidden in form.hidden_fields %}
       {{ hidden }}
     {% endfor %}
@@ -332,12 +333,13 @@ document.addEventListener("DOMContentLoaded", function() {
               // Further check: Is the request assigned to this concierge?
               // Check both the initial assignment and the potentially new assignment from the form
               const newAssignedToId = assignedToSelect ? assignedToSelect.value : null;
-              const isAssignedToThisConcierge = (initialAssignedToId === currentUserId) || (newAssignedToId === currentUserId);
+              const isAssignedToThisConcierge = (initialAssignedToId.toString() === currentUserId.toString()) || (newAssignedToId !== null && newAssignedToId.toString() === currentUserId.toString());
+               // Added .toString() for comparison safety
 
               if (isAssignedToThisConcierge) {
                   getConciergeLocation = true;
                   console.log("Concierge is setting status to Delivery and assigned to self - attempting to get location.");
-              } else if (newAssignedToId === currentUserId && assignedToSelect) {
+              } else if (newAssignedToId !== null && newAssignedToId.toString() === currentUserId.toString() && assignedToSelect) {
                   // This handles the case where the concierge was not assigned but is assigning themselves
                   getConciergeLocation = true;
                    console.log("Concierge is assigning to self and setting to Delivery - attempting to get location.");
