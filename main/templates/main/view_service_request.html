@@ -124,11 +124,15 @@ document.addEventListener("DOMContentLoaded", function() {
       .join(', ');
   }
 
-  // Helper: Fit map to both markers if both exist
+  // Helper: Fit map to both markers if both exist, or zoom to one if only one exists
   function fitMapToMarkers() {
       if (pickupMarker && conciergeMarker) {
           const group = new L.featureGroup([pickupMarker, conciergeMarker]);
           map.fitBounds(group.getBounds(), { padding: [50, 50] });
+      } else if (pickupMarker) {
+          map.setView(pickupMarker.getLatLng(), 16);
+      } else if (conciergeMarker) {
+          map.setView(conciergeMarker.getLatLng(), 16);
       }
   }
 
@@ -172,7 +176,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
               updateMapMessage("", "info");
 
-              // Only fit map if both markers exist
+              // Fit map after placing marker
               fitMapToMarkers();
 
             } else {
@@ -233,7 +237,7 @@ document.addEventListener("DOMContentLoaded", function() {
                           .addTo(map)
                           .bindPopup(`<b>${assignedToName}'s Location</b>`);
                       }
-                      // Only fit map if both markers exist
+                      // Fit map after placing marker
                       fitMapToMarkers();
                       updateMapMessage("", "info");
                   } else {
