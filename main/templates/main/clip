@@ -1,0 +1,6 @@
+              // Create and add the pickup marker with a blue icon
+                pickupMarker = L.marker([lat, lon])
+		.addTo(map)
+    		.bindPopup(`<b>Pickup:</b><br>${addressStr.replace(/\\u000A/g, '<br>')}`);
+})
+              })
