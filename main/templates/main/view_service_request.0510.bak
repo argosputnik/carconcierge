@@ -3,89 +3,82 @@
 
 {% block title %}Service Request #{{ service_request.id }}{% endblock %}
 
-{# Make sure you have a static directory in your app and 'images' inside it #}
-{# with marker-icon-blue.png and marker-icon-red.png #}
-{# Example: your_app/static/images/marker-icon-blue.png #}
-{# Example: your_app/static/images/marker-icon-red.png #}
-
 {% block content %}
 <div class="main-content main-padded-top">
-<div class="container">
-  <h2 class="mb-4 text-center">Service Request Details</h2>
+  <div class="container">
+    <h2 class="mb-4 text-center">Service Request Details</h2>
 
-  <div class="d-flex justify-content-center gap-3 mb-4">
-    {% include 'main/_dashboard_buttons.html' %}
-  </div>
+    <div class="d-flex justify-content-center gap-3 mb-4">
+      {% include 'main/_dashboard_buttons.html' %}
+    </div>
 
-  <div class="card mb-4">
-    <div class="card-header">Request Information</div>
-    <div class="card-body">
-      <dl class="row">
-        <dt class="col-sm-3">Request ID</dt>
-        <dd class="col-sm-9">{{ service_request.id }}</dd>
+    <div class="card mb-4">
+      <div class="card-header">Request Information</div>
+      <div class="card-body">
+        <dl class="row">
+          <dt class="col-sm-3">Request ID</dt>
+          <dd class="col-sm-9">{{ service_request.id }}</dd>
 
-        <dt class="col-sm-3">Requested At</dt>
-        <dd class="col-sm-9">{{ service_request.requested_at|date:"Y-m-d H:i" }}</dd>
+          <dt class="col-sm-3">Requested At</dt>
+          <dd class="col-sm-9">{{ service_request.requested_at|date:"Y-m-d H:i" }}</dd>
 
-        <dt class="col-sm-3">Pickup Location</dt>
-        <dd class="col-sm-9" style="white-space: pre-line;">{{ service_request.pickup_location }}</dd>
+          <dt class="col-sm-3">Pickup Location</dt>
+          <dd class="col-sm-9" style="white-space: pre-line;">{{ service_request.pickup_location }}</dd>
 
-        <dt class="col-sm-3">Dropoff Location</dt>
-        <dd class="col-sm-9" style="white-space: pre-line;">{{ service_request.dropoff_location }}</dd>
+          <dt class="col-sm-3">Dropoff Location</dt>
+          <dd class="col-sm-9" style="white-space: pre-line;">{{ service_request.dropoff_location }}</dd>
 
-        <dt class="col-sm-3">Status</dt>
-        <dd class="col-sm-9">{{ service_request.status }}</dd>
+          <dt class="col-sm-3">Status</dt>
+          <dd class="col-sm-9">{{ service_request.status }}</dd>
 
-        <dt class="col-sm-3">Assigned To</dt>
-        <dd class="col-sm-9">
-          {% if service_request.assigned_to %}
-            {{ service_request.assigned_to.get_full_name|default:"Assigned User" }}
-          {% else %}
-            <em>Unassigned</em>
+          <dt class="col-sm-3">Assigned To</dt>
+          <dd class="col-sm-9">
+            {% if service_request.assigned_to %}
+              {{ service_request.assigned_to.get_full_name|default:"Assigned User" }}
+            {% else %}
+              <em>Unassigned</em>
+            {% endif %}
+          </dd>
+
+          {% if service_request.description %}
+            <dt class="col-sm-3">Description</dt>
+            <dd class="col-sm-9">{{ service_request.description }}</dd>
           {% endif %}
-        </dd>
-
-        {% if service_request.description %}
-          <dt class="col-sm-3">Description</dt>
-          <dd class="col-sm-9">{{ service_request.description }}</dd>
-        {% endif %}
-      </dl>
+        </dl>
+      </div>
     </div>
-  </div>
 
-  <div class="card mb-4">
-    <div class="card-header">Location Map</div>
-    <div class="card-body">
-      <div
-        id="map"
-        style="height: 400px;"
-        data-pickup="{{ service_request.pickup_location|escapejs }}"
-        {# Pass the location API URL if available from the view #}
-        data-location-api-url="{{ location_api_url|default:'' }}"
-        {# Pass the concierge's name for the popup if assigned #}
-        data-assigned-to-name="{{ service_request.assigned_to.get_full_name|default:'Concierge'|escapejs }}"
-      ></div>
-      <div id="map-message" class="alert alert-info mt-2" style="display:none;">Finding location...</div>
+    <div class="card mb-4">
+      <div class="card-header">Location Map</div>
+      <div class="card-body">
+        <div
+          id="map"
+          style="height: 400px;"
+          data-pickup="{{ service_request.pickup_location|escapejs }}"
+          data-location-api-url="{{ location_api_url|default:'' }}"
+          data-assigned-to-name="{{ service_request.assigned_to.get_full_name|default:'Concierge'|escapejs }}"
+        ></div>
+        <div id="map-message" class="alert alert-info mt-2" style="display:none;">Finding location...</div>
+      </div>
     </div>
-  </div>
 
-  <div class="mt-4 text-center">
-    {% if request.user.role == 'customer' %}
-      <a href="{% url 'customer_dashboard' %}" class="btn btn-secondary me-2">← Back to Dashboard</a>
-    {% elif request.user.role == 'concierge' %}
-      <a href="{% url 'concierge_dashboard' %}" class="btn btn-secondary me-2">← Back to Dashboard</a>
-    {% elif request.user.role == 'dealer' %}
-      <a href="{% url 'dealer_dashboard' %}" class="btn btn-secondary me-2">← Back to Dashboard</a>
-    {% elif request.user.role == 'owner' %}
-      <a href="{% url 'owner_dashboard' %}" class="btn btn-secondary me-2">← Back to Dashboard</a>
-    {% else %}
-      <a href="{% url 'home' %}" class="btn btn-secondary me-2">← Back</a>
-    {% endif %}
+    <div class="mt-4 text-center">
+      {% if request.user.role == 'customer' %}
+        <a href="{% url 'customer_dashboard' %}" class="btn btn-secondary me-2">← Back to Dashboard</a>
+      {% elif request.user.role == 'concierge' %}
+        <a href="{% url 'concierge_dashboard' %}" class="btn btn-secondary me-2">← Back to Dashboard</a>
+      {% elif request.user.role == 'dealer' %}
+        <a href="{% url 'dealer_dashboard' %}" class="btn btn-secondary me-2">← Back to Dashboard</a>
+      {% elif request.user.role == 'owner' %}
+        <a href="{% url 'owner_dashboard' %}" class="btn btn-secondary me-2">← Back to Dashboard</a>
+      {% else %}
+        <a href="{% url 'home' %}" class="btn btn-secondary me-2">← Back</a>
+      {% endif %}
 
-    {# Show edit button only if the user has permission (using the 'can_edit' context variable from view) #}
-    {% if can_edit %}
-      <a href="{% url 'edit_service_request' service_request.id %}" class="btn btn-primary">Edit</a>
-    {% endif %}
+      {% if can_edit %}
+        <a href="{% url 'edit_service_request' service_request.id %}" class="btn btn-primary">Edit</a>
+      {% endif %}
+    </div>
   </div>
 </div>
 {% endblock %}
@@ -131,6 +124,18 @@ document.addEventListener("DOMContentLoaded", function() {
       .join(', ');
   }
 
+  // Helper: Fit map to both markers if both exist, or zoom to one if only one exists
+  function fitMapToMarkers() {
+      if (pickupMarker && conciergeMarker) {
+          const group = new L.featureGroup([pickupMarker, conciergeMarker]);
+          map.fitBounds(group.getBounds(), { padding: [50, 50] });
+      } else if (pickupMarker) {
+          map.setView(pickupMarker.getLatLng(), 16);
+      } else if (conciergeMarker) {
+          map.setView(conciergeMarker.getLatLng(), 16);
+      }
+  }
+
   function geocodeAndDisplayPickupLocation(address) {
       const addressStr = String(address || "").trim();
       if (!addressStr) {
@@ -170,6 +175,9 @@ document.addEventListener("DOMContentLoaded", function() {
                 .bindPopup(`<b>Pickup:</b><br>${addressStr.replace(/\\u000A/g, '<br>')}`);
 
               updateMapMessage("", "info");
+
+              // Fit map after placing marker
+              fitMapToMarkers();
 
             } else {
               console.error("View Map Invalid coordinates received from geocoding for pickup:", data[0]);
@@ -229,12 +237,8 @@ document.addEventListener("DOMContentLoaded", function() {
                           .addTo(map)
                           .bindPopup(`<b>${assignedToName}'s Location</b>`);
                       }
-                      if (pickupMarker && conciergeMarker) {
-                          const group = new L.featureGroup([pickupMarker, conciergeMarker]);
-                          map.fitBounds(group.getBounds(), { padding: [50, 50] });
-                      } else if (conciergeMarker) {
-                          map.setView([lat, lon], 15);
-                      }
+                      // Fit map after placing marker
+                      fitMapToMarkers();
                       updateMapMessage("", "info");
                   } else {
                       console.warn("Invalid coordinates for concierge location:", data);
@@ -281,4 +285,3 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 </script>
 {% endblock %}
-
