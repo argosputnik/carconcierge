@@ -83,6 +83,7 @@
 </div>
 {% endblock %}
 
+
 {% block scripts %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -93,7 +94,7 @@ document.addEventListener("DOMContentLoaded", function() {
       console.error("Map element not found!");
       return;
   }
-  const map = L.map("map").setView([0, 0], 2);
+  const map = L.map("map").setView([0, 0], 2); // Initial view, will be updated
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "© OpenStreetMap contributors"
   }).addTo(map);
@@ -147,6 +148,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
       updateMapMessage("Finding pickup location...", "info");
       const geocodingAddress = formatAddress(addressStr);
+      console.log("View Map attempting to geocode pickup:", geocodingAddress);
+
       fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(geocodingAddress)}&limit=1`)
         .then(response => {
           if (!response.ok) {
@@ -155,28 +158,40 @@ document.addEventListener("DOMContentLoaded", function() {
           return response.json();
         })
         .then(data => {
+          console.log("View Map geocoding results for pickup:", data);
           if (data && data.length > 0) {
             const lat = parseFloat(data[0].lat);
             const lon = parseFloat(data[0].lon);
 
             if (!isNaN(lat) && !isNaN(lon)) {
+              console.log(`View Map geocoding successful for pickup. Coordinates: ${lat}, ${lon}`);
+
               if (pickupMarker) {
                   map.removeLayer(pickupMarker);
               }
+
+              // Use default blue marker
               pickupMarker = L.marker([lat, lon])
                 .addTo(map)
                 .bindPopup(`<b>Pickup:</b><br>${addressStr.replace(/\\u000A/g, '<br>')}`);
+
               updateMapMessage("", "info");
+
+              // Fit map after placing marker
               fitMapToMarkers();
+
             } else {
+              console.error("View Map Invalid coordinates received from geocoding for pickup:", data[0]);
               throw new Error("Invalid coordinates received.");
             }
           } else {
+            console.warn("View Map geocoding found no results for pickup:", geocodingAddress);
             updateMapMessage(`Could not find pickup location for: "${geocodingAddress}". Please verify the address format.`, "warning");
             map.setView([41.7151, 44.8271], 12);
           }
         })
         .catch(error => {
+          console.error("View Map geocoding process error for pickup:", error);
           updateMapMessage(`Error finding pickup location: ${error.message}. Check address format.`, "danger");
           map.setView([41.7151, 44.8271], 12);
         });
@@ -184,10 +199,12 @@ document.addEventListener("DOMContentLoaded", function() {
 
   function fetchAndDisplayConciergeLocation() {
       if (locationApiUrl) {
+          console.log("Fetching concierge location from:", locationApiUrl);
           fetch(locationApiUrl)
               .then(response => {
                   if (!response.ok) {
                       if (response.status === 404 || response.status === 403) {
+                          console.warn("Concierge location not currently available or sharing off.");
                           if (conciergeMarker) {
                               map.removeLayer(conciergeMarker);
                               conciergeMarker = null;
@@ -199,6 +216,7 @@ document.addEventListener("DOMContentLoaded", function() {
                   return response.json();
               })
               .then(data => {
+                  console.log("Concierge Location Received:", data);
                   const lat = parseFloat(data.lat);
                   const lon = parseFloat(data.lng);
 
@@ -220,14 +238,21 @@ document.addEventListener("DOMContentLoaded", function() {
                           .addTo(map)
                           .bindPopup(`<b>${assignedToName}'s Location</b>`);
                       }
+                      // Fit map after placing marker
                       fitMapToMarkers();
                       updateMapMessage("", "info");
+                  } else {
+                      console.warn("Invalid coordinates for concierge location:", data);
                   }
               })
               .catch(error => {
-                  updateMapMessage(`Error fetching concierge location: ${error.message}`, "warning");
+                  console.error("Error fetching concierge location:", error);
+                  if (error !== "Location not available") {
+                     updateMapMessage(`Error fetching concierge location: ${error.message}`, "warning");
+                  }
               });
       } else {
+          console.log("Concierge location API URL not provided (concierge not assigned or sharing off).");
           if (conciergeMarker) {
                map.removeLayer(conciergeMarker);
                conciergeMarker = null;
@@ -240,6 +265,8 @@ document.addEventListener("DOMContentLoaded", function() {
   requestAnimationFrame(() => {
     if (mapEl.offsetParent !== null) {
         map.invalidateSize();
+    } else {
+        console.warn("Map container might be hidden initially. Invalidation might be needed later.");
     }
     setTimeout(() => {
         geocodeAndDisplayPickupLocation(pickupAddress);
@@ -252,20 +279,12 @@ document.addEventListener("DOMContentLoaded", function() {
      window.addEventListener('beforeunload', function() {
          clearInterval(pollingInterval);
      });
+  } else {
+      console.log("Location API URL not available, not setting up polling.");
   }
 
-  // Warn concierge if page loses focus (live tracking will pause)
-  {% if request.user.role == 'concierge' and service_request.assigned_to and service_request.assigned_to.id == request.user.id and service_request.status == 'Delivery' %}
-  document.addEventListener('visibilitychange', function() {
-      if (document.hidden) {
-          alert("Live tracking will pause if you leave this page or your phone locks.");
-      }
-  });
-  {% endif %}
 });
-</script>
 
-{# Live location sending: Only for assigned concierge in Delivery status #}
 {% if request.user.role == 'concierge' and service_request.assigned_to and service_request.assigned_to.id == request.user.id and service_request.status == 'Delivery' %}
 <script>
 function getCookie(name) {
@@ -304,6 +323,8 @@ if (navigator.geolocation) {
         timeout: 10000
     });
 }
-</script>
 {% endif %}
+
+
+</script>
 {% endblock %}
