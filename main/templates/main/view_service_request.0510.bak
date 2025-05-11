@@ -81,7 +81,22 @@
     </div>
   </div>
 </div>
+
+<div id="location-status"></div>
+<script>
+function showLocationStatus(msg) {
+    document.getElementById('location-status').textContent = msg;
+}
+navigator.geolocation.watchPosition(function(position) {
+    showLocationStatus("Last sent: " + position.coords.latitude + ", " + position.coords.longitude + " at " + new Date().toLocaleTimeString());
+    // ... send to backend ...
+});
+</script>
+
+
 {% endblock %}
+
+
 
 {% block scripts %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
