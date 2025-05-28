@@ -231,10 +231,10 @@ def view_service_request(request, request_id):
     if sr.assigned_to and sr.share_location:
         location_api_url = reverse('service_request_location', kwargs={'request_id': sr.id})
 
-    # --- Dealer info for map ---
+    # Only show dealer marker if status is "In service" and assigned_to is set
     dealer_address = None
     dealer_name = None
-    if sr.status == 'In service' and sr.assigned_dealer:
+    if sr.status == 'In service' and sr.assigned_to and sr.assigned_dealer:
         dealer_address = sr.assigned_dealer.address
         dealer_name = sr.assigned_dealer.name
 
