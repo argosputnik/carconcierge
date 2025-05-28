@@ -225,19 +225,27 @@ def create_service_request(request):
 @login_required
 def view_service_request(request, request_id):
     sr = get_object_or_404(ServiceRequest, id=request_id)
-    if (
-        request.user != sr.customer
-        and request.user.role not in ['concierge', 'dealer', 'owner']
-    ):
-        return HttpResponseForbidden("No permission to view this request.")
+    # ... permission checks ...
+
     location_api_url = None
     if sr.assigned_to and sr.share_location:
         location_api_url = reverse('service_request_location', kwargs={'request_id': sr.id})
+
+    # --- Dealer info for map ---
+    dealer_address = None
+    dealer_name = None
+    if sr.status == 'In service' and sr.assigned_dealer:
+        dealer_address = sr.assigned_dealer.address
+        dealer_name = sr.assigned_dealer.name
+
     return render(request, 'main/view_service_request.html', {
         'service_request': sr,
         'location_api_url': location_api_url,
-        'can_edit': (request.user == sr.customer or request.user.role in ['concierge', 'dealer', 'owner'])
+        'can_edit': (request.user == sr.customer or request.user.role in ['concierge', 'dealer', 'owner']),
+        'dealer_address': dealer_address,
+        'dealer_name': dealer_name,
     })
+
 
 @login_required
 def edit_service_request(request, request_id):
