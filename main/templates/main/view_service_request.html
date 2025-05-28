@@ -56,12 +56,12 @@
           style="height: 400px;"
           data-pickup="{{ service_request.pickup_location|escapejs }}"
           data-location-api-url="{{ location_api_url|default:'' }}"
-          data-assigned-to-name="{{ service_request.assigned_to.get_full_name|default:'Concierge'|escapejs }}">
-	{% if dealer_address %}
-    	data-dealer-address="{{ dealer_address|escapejs }}"
-     	data-dealer-name="{{ dealer_name|escapejs }}"
-  	 {% endif %}
-	</div>
+          data-assigned-to-name="{{ service_request.assigned_to.get_full_name|default:'Concierge'|escapejs }}"
+          {% if dealer_address %}
+            data-dealer-address="{{ dealer_address|escapejs }}"
+            data-dealer-name="{{ dealer_name|escapejs }}"
+          {% endif %}
+        ></div>
         <div id="map-message" class="alert alert-info mt-2" style="display:none;">Finding location...</div>
       </div>
     </div>
@@ -87,6 +87,9 @@
 </div>
 {% endblock %}
 
+{% block scripts %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 document.addEventListener("DOMContentLoaded", function() {
   const mapEl = document.getElementById("map");
@@ -101,14 +104,13 @@ document.addEventListener("DOMContentLoaded", function() {
 
   let pickupMarker = null;
   let conciergeMarker = null;
-  let dealerMarker = null; // --- Dealer marker variable ---
+  let dealerMarker = null;
   const messageEl = document.getElementById("map-message");
 
   // Get data attributes
   const pickupAddress = mapEl.dataset.pickup;
   const locationApiUrl = mapEl.dataset.locationApiUrl;
   const assignedToName = mapEl.dataset.assignedToName;
-  // --- Dealer data attributes ---
   const dealerAddress = mapEl.dataset.dealerAddress;
   const dealerName = mapEl.dataset.dealerName;
 
@@ -129,7 +131,6 @@ document.addEventListener("DOMContentLoaded", function() {
       .join(', ');
   }
 
-  // --- Updated: Fit map to all markers ---
   function fitMapToMarkers() {
       const markers = [pickupMarker, conciergeMarker, dealerMarker].filter(Boolean);
       if (markers.length > 1) {
@@ -240,7 +241,6 @@ document.addEventListener("DOMContentLoaded", function() {
       }
   }
 
-  // --- Dealer marker logic ---
   function geocodeAndDisplayDealerLocation(address, name) {
       if (!address) return;
       updateMapMessage("Finding dealer location...", "info");
@@ -277,7 +277,6 @@ document.addEventListener("DOMContentLoaded", function() {
           updateMapMessage(`Error finding dealer location: ${error.message}`, "danger");
         });
   }
-  // --- End dealer marker logic ---
 
   // Initialize map and display the pickup location
   requestAnimationFrame(() => {
@@ -287,7 +286,6 @@ document.addEventListener("DOMContentLoaded", function() {
     setTimeout(() => {
         geocodeAndDisplayPickupLocation(pickupAddress);
         fetchAndDisplayConciergeLocation();
-        // --- Add dealer marker if address is present ---
         if (dealerAddress) {
             geocodeAndDisplayDealerLocation(dealerAddress, dealerName);
         }
@@ -311,4 +309,4 @@ document.addEventListener("DOMContentLoaded", function() {
   {% endif %}
 });
 </script>
-
+{% endblock %}
