@@ -238,8 +238,8 @@ def view_service_request(request, request_id):
         dealer_address = sr.assigned_dealer.address
         dealer_name = sr.assigned_dealer.name
         print(f"DEBUG: Dealer address for SR#{sr.id}: {dealer_address} (name: {dealer_name})")
-else:
-    print(f"DEBUG: No dealer marker for SR#{sr.id} (status: {sr.status}, assigned_to: {sr.assigned_to}, assigned_dealer: {sr.assigned_dealer})")
+    else:
+        print(f"DEBUG: No dealer marker for SR#{sr.id} (status: {sr.status}, assigned_to: {sr.assigned_to}, assigned_dealer: {sr.assigned_dealer})")
 
     return render(request, 'main/view_service_request.html', {
         'service_request': sr,
