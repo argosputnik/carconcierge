@@ -4,11 +4,12 @@ from django.contrib.auth import login, get_user_model
 from django.contrib.auth.models import Group
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.views.decorators.http import require_POST, require_GET
-from django.http import HttpResponse, HttpResponseForbidden, Http404, JsonResponse, HttpResponseServerError
+from django.http import HttpResponse, HttpResponseForbidden, Http404, JsonResponse
 from django.contrib import messages
 from django.utils import timezone
+from django.db.models import F, Case, When, Value, CharField
 from django.core.paginator import Paginator
-from django.urls import reverse
+from django.urls import reverse # Import reverse for URL generation
 
 from .models import (
     Car,
@@ -47,6 +48,7 @@ def is_concierge(user):
 def is_dealer(user):
     return user.is_authenticated and user.role == 'dealer'
 
+
 # --------------------------
 # Home & Health
 # --------------------------
@@ -55,6 +57,7 @@ def home(request):
 
 def health(request):
     return HttpResponse("OK")
+
 
 # --------------------------
 # Signup, Account & Redirect
@@ -96,6 +99,7 @@ def redirect_after_login(request):
         return redirect('dealer_dashboard')
     return redirect('customer_dashboard')
 
+
 # --------------------------
 # Dashboards
 # --------------------------
@@ -105,9 +109,11 @@ def customer_dashboard(request):
     service_requests = ServiceRequest.objects.filter(customer=request.user)
     if status_filter != 'all':
         service_requests = service_requests.filter(status=status_filter)
+
     invoices = Invoice1.objects.filter(
         service_request__customer=request.user
     ).order_by('payment_status', '-invoice_date')
+
     return render(request, 'main/customer_dashboard.html', {
         'open_requests': service_requests,
         'status_filter': status_filter,
@@ -121,6 +127,7 @@ def concierge_dashboard(request):
     open_requests = ServiceRequest.objects.exclude(status='Waiting for Payment')
     if status_filter != 'all':
         open_requests = open_requests.filter(status=status_filter)
+
     return render(request, 'main/concierge_dashboard.html', {
         'open_requests': open_requests,
         'status_filter': status_filter,
@@ -134,6 +141,7 @@ def dealer_dashboard(request):
                                         .exclude(status__in=['Waiting for Payment','Pending'])
     if status_filter != 'all':
         open_requests = open_requests.filter(status=status_filter)
+
     return render(request, 'main/dealer_dashboard.html', {
         'open_requests': open_requests,
         'status_filter': status_filter,
@@ -141,8 +149,11 @@ def dealer_dashboard(request):
 
 @login_required
 def owner_dashboard(request):
+    # Get sort parameters from request
     sort_field = request.GET.get('sort', 'requested_at')
     sort_direction = request.GET.get('dir', 'desc')
+
+    # Define valid sort fields to prevent SQL injection
     valid_sort_fields = {
         'requested_at': 'requested_at',
         'customer': 'customer__first_name',
@@ -150,26 +161,39 @@ def owner_dashboard(request):
         'assigned_to': 'assigned_to__first_name',
         'description': 'description'
     }
+
+    # Use the sort field if it's valid, otherwise default to requested_at
     sort_field = valid_sort_fields.get(sort_field, 'requested_at')
+
+    # Apply the sort direction
     if sort_direction == 'asc':
         sort_field = sort_field
-    else:
+    else:  # default to desc
         sort_field = f'-{sort_field}'
+
+    # Apply sorting to service requests
     service_requests_list = ServiceRequest.objects.all().order_by(sort_field)
-    sr_paginator = Paginator(service_requests_list, 5)
+
+    # Service requests pagination
+    sr_paginator = Paginator(service_requests_list, 5)  # Show 5 requests per page
     sr_page_number = request.GET.get('sr_page')
     service_requests = sr_paginator.get_page(sr_page_number)
+
+    # Get invoices with default sorting and pagination
     invoices_list = Invoice1.objects.all().order_by('-invoice_date')
-    inv_paginator = Paginator(invoices_list, 5)
+    inv_paginator = Paginator(invoices_list, 5)  # Show 5 invoices per page
     inv_page_number = request.GET.get('inv_page')
     invoices1 = inv_paginator.get_page(inv_page_number)
+
     context = {
         'service_requests': service_requests,
         'invoices1': invoices1,
         'current_sort': sort_field.lstrip('-'),
         'current_direction': sort_direction,
     }
+
     return render(request, 'main/owner_dashboard.html', context)
+
 
 # --------------------------
 # Service Requests
@@ -179,6 +203,7 @@ def create_service_request(request):
     cars = request.user.cars.all()
     is_locked = (cars.count() == 1)
     missing_info = not request.user.address or not request.user.phone
+
     if request.method == 'POST':
         if missing_info:
             messages.warning(
@@ -186,11 +211,15 @@ def create_service_request(request):
                 "Please complete your account information before submitting a service request."
             )
             return redirect('account_info')
+
         form = ServiceRequestForm(request.POST, user=request.user)
         if form.is_valid():
+            # pick existing car
             car = get_object_or_404(Car, id=request.POST.get('car'), owner=request.user)
+
             job_type = form.cleaned_data['job_type']
             description = form.cleaned_data['description'] if job_type == 'Other' else job_type
+
             sr = ServiceRequest.objects.create(
                 customer=request.user,
                 car=car,
@@ -199,6 +228,7 @@ def create_service_request(request):
                 pickup_location=form.cleaned_data['pickup_location'],
                 dropoff_location=form.cleaned_data['dropoff_location'],
             )
+
             Invoice1.objects.create(
                 service_request=sr,
                 first_name=request.user.first_name,
@@ -215,6 +245,7 @@ def create_service_request(request):
             return redirect('customer_dashboard')
     else:
         form = ServiceRequestForm(user=request.user)
+
     return render(request, 'main/service_request_form.html', {
         'form': form,
         'car_locked': is_locked,
@@ -222,76 +253,105 @@ def create_service_request(request):
         'missing_info': missing_info,
     })
 
+
 @login_required
 def view_service_request(request, request_id):
     sr = get_object_or_404(ServiceRequest, id=request_id)
-    # ... permission checks ...
+    if (
+        request.user != sr.customer
+        and request.user.role not in ['concierge', 'dealer', 'owner']
+    ):
+        return HttpResponseForbidden("No permission to view this request.")
 
-    location_api_url = None
-    if sr.assigned_to and sr.share_location:
-        location_api_url = reverse('service_request_location', kwargs={'request_id': sr.id})
-
-    # Only show dealer marker if status is "In service" and assigned_to is set
-    dealer_address = None
-    dealer_name = None
-    if sr.status == 'In service' and sr.assigned_to and sr.assigned_dealer:
-        dealer_address = sr.assigned_dealer.address
-        dealer_name = sr.assigned_dealer.name
+    # Pass the URL for the location API endpoint to the template
+    location_api_url = reverse('update_concierge_location', kwargs={'request_id': sr.id})
 
     return render(request, 'main/view_service_request.html', {
         'service_request': sr,
-        'location_api_url': location_api_url,
-        'can_edit': (request.user == sr.customer or request.user.role in ['concierge', 'dealer', 'owner']),
-        'dealer_address': dealer_address,
-        'dealer_name': dealer_name,
+        'location_api_url': location_api_url, # Pass the URL
     })
-
 
 @login_required
 def edit_service_request(request, request_id):
     sr = get_object_or_404(ServiceRequest, id=request_id)
+    # permission to view
+    # It's good practice to check edit permission too if it's different from view
     if (
         request.user != sr.customer
         and request.user.role not in ['concierge','dealer','owner']
     ):
         return HttpResponseForbidden("No permission to view or edit this request.")
+
+    # The 'can_edit_locations' flag is still useful for template logic
+    # This determines if the location fields are rendered as editable or read-only
     can_edit_locations = (
         request.user == sr.customer or request.user.role == 'owner'
     )
+
     if request.method == 'POST':
         form = EditRequestForm(request.POST, instance=sr, user=request.user)
+
         if form.is_valid():
             updated = form.save(commit=False)
+
+            # Process other form fields and logic
             status = form.cleaned_data['status']
-            assigned_to = form.cleaned_data.get('assigned_to')
+            assigned_to = form.cleaned_data.get('assigned_to') # Get assigned_to from cleaned data
+
+            # --- Location Handling Logic ---
+            # Only process location if the current user is a concierge
             if request.user.role == 'concierge':
-                is_now_assigned_to_current_concierge = updated.assigned_to == request.user
+                # Check if the request is being assigned to THIS concierge
+                # or if it's already assigned to THIS concierge AND the status is changing to 'Delivery'
+                is_assigned_to_current_concierge = assigned_to == request.user
                 was_assigned_to_current_concierge = sr.assigned_to == request.user
-                if status == 'Delivery' and (is_now_assigned_to_current_concierge or was_assigned_to_current_concierge):
-                    concierge_latitude_str = request.POST.get('concierge_latitude')
-                    concierge_longitude_str = request.POST.get('concierge_longitude')
-                    try:
-                        concierge_latitude = float(concierge_latitude_str) if concierge_latitude_str else None
-                        concierge_longitude = float(concierge_longitude_str) if concierge_longitude_str else None
-                        if concierge_latitude is not None and concierge_longitude is not None:
-                            updated.concierge_latitude = concierge_latitude
-                            updated.concierge_longitude = concierge_longitude
-                            updated.share_location = True
-                        else:
-                            messages.warning(request, "Could not get your current location. Location sharing may not be active.")
-                            updated.share_location = False
-                    except (ValueError, TypeError):
-                        messages.error(request, "Invalid location data received.")
-                        updated.share_location = False
-                elif sr.status == 'Delivery' and status != 'Delivery' and sr.assigned_to == request.user:
+
+                if (is_assigned_to_current_concierge and status == 'Delivery') or \
+                   (was_assigned_to_current_concierge and status == 'Delivery'):
+
+                    # Attempt to get location data from POST
+                    # (These fields need to be added to your EditRequestForm or handled separately)
+                    concierge_latitude = request.POST.get('concierge_latitude')
+                    concierge_longitude = request.POST.get('concierge_longitude')
+
+                    # Save location only if available and user is concierge setting status to Delivery
+                    if concierge_latitude and concierge_longitude:
+                         updated.concierge_latitude = float(concierge_latitude)
+                         updated.concierge_longitude = float(concierge_longitude)
+                         updated.share_location = True
+                    else:
+                        # If location data is expected but not found, handle it
+                        messages.warning(request, "Could not get your current location. Location sharing may not be active.")
+                        updated.share_location = False # Or decide based on your requirements
+
+                elif was_assigned_to_current_concierge and status != 'Delivery':
+                    # If concierge is changing status away from Delivery, stop sharing
                     updated.share_location = False
-            if status in ['Complete', 'Cancelled']:
-                updated.assigned_to = None
+                    # You might also want to clear the location data here if desired
+                    # updated.concierge_latitude = None
+                    # updated.concierge_longitude = None
+
+            # Logic for status changes and assignments (keep your existing logic)
+            if status == 'Delivery' and request.user.role == 'concierge':
+                updated.assigned_to     = request.user # Ensure it's assigned to the current concierge
+                updated.share_location = True # Ensure sharing is enabled
+                # Location is handled above if available in POST
+            # dealer → In service
+            elif status == 'In service' and request.user.role == 'dealer':
                 updated.share_location = False
-            elif request.user.role != 'concierge' and status != 'Delivery':
-                updated.share_location = False
+            # all others → unassign (Handles cases where status changes to something else, or by owner/customer)
+            else:
+                # Only unassign if the current user is allowed to change assignment
+                if request.user.role in ['concierge', 'owner']: # Only allowed roles can unassign
+                     updated.assigned_to = assigned_to # Use the value from the form for unassigning
+                updated.share_location = False # Assuming sharing is off unless Delivery by concierge
+
+            # Save the instance with all changes from the form and view logic
             updated.save()
+
             messages.success(request, "Service request updated.")
+
+            # Redirect based on the user's role
             if request.user.role == 'customer':
                 return redirect('customer_dashboard')
             elif request.user.role == 'concierge':
@@ -299,20 +359,31 @@ def edit_service_request(request, request_id):
             elif request.user.role == 'dealer':
                 return redirect('dealer_dashboard')
             elif request.user.role == 'owner':
-                return redirect('owner_dashboard')
+                 return redirect('owner_dashboard')
             else:
-                return redirect('home')
+                 return redirect('home')
+
+        else:
+            # Form is not valid, errors will be displayed in the template
+            pass # Keep the existing behavior to re-render the form with errors
+
     else:
+        # GET request: Initialize form with existing instance data
         form = EditRequestForm(instance=sr, user=request.user)
+
+    # Prepare context for the template
     context = {
         'form': form,
         'service_request': sr,
         'can_edit_locations': can_edit_locations,
+         # Pass user role and assigned_to value to template for JS logic
         'current_user_role': request.user.role,
         'assigned_user_id': sr.assigned_to.id if sr.assigned_to else '',
         'current_user_id': request.user.id,
     }
+
     return render(request, 'main/edit_service_request.html', context)
+
 
 @login_required
 def delete_service_request(request, request_id):
@@ -330,20 +401,22 @@ def delete_service_request(request, request_id):
 
 @require_POST
 @login_required
-@user_passes_test(is_dealer)
+@user_passes_test(is_dealer) # Ensure only dealers can use this
 def set_request_delivery(request, pk):
+    # Updated logic: Only allow if status is not already 'Delivery'
     sr = get_object_or_404(
         ServiceRequest,
         pk=pk,
         assigned_to=request.user,
-        status__in=['In service']
+        status__in=['In service'] # Only allow setting to Delivery from 'In service'
     )
     sr.status = 'Delivery'
-    sr.assigned_to = None
-    sr.share_location = False
+    sr.assigned_to = None # Unassign from dealer
+    sr.share_location = False # Dealer stops sharing location upon delivery
     sr.save()
     messages.success(request, f"Service Request #{sr.id} status updated to Delivery.")
     return redirect('dealer_dashboard')
+
 
 # --------------------------
 # Car Management
@@ -389,11 +462,13 @@ def delete_car(request, car_id):
         return redirect('my_cars')
     return render(request, 'main/delete_car.html', {'car': car})
 
+
 # --------------------------
 # Owner / Dealer / Concierge Management
 # --------------------------
 @login_required
 def view_owners(request):
+    # Restrict this view to users with 'owner' role
     if request.user.role != 'owner':
         return HttpResponseForbidden("You do not have permission to view this page.")
     owners = User.objects.filter(role='owner')
@@ -401,6 +476,7 @@ def view_owners(request):
 
 @login_required
 def add_owner(request):
+     # Restrict this view to users with 'owner' role
     if request.user.role != 'owner':
         return HttpResponseForbidden("You do not have permission to add owners.")
     if request.method == 'POST':
@@ -412,16 +488,18 @@ def add_owner(request):
             new_owner.save()
             Group.objects.get_or_create(name='Owners')[0].user_set.add(new_owner)
             messages.success(request, "Owner created.")
-            return redirect('owner_dashboard')
+            return redirect('owner_dashboard') # Redirect to owner dashboard after adding
     else:
         form = AddOwnerForm()
     return render(request, 'main/add_owner.html', {'form': form})
 
 @login_required
 def delete_owner(request, owner_id):
+     # Restrict this view to users with 'owner' role
     if request.user.role != 'owner':
         return HttpResponseForbidden("You do not have permission to delete owners.")
     owner = get_object_or_404(User, id=owner_id, role='owner')
+    # Prevent owner from deleting themselves
     if request.user == owner:
         messages.error(request, "You cannot delete your own owner account.")
         return redirect('view_owners')
@@ -430,8 +508,10 @@ def delete_owner(request, owner_id):
         messages.success(request, "Owner deleted.")
     return redirect('view_owners')
 
+
 @login_required
 def view_dealers(request):
+    # Restrict this view to users with 'owner' role
     if request.user.role != 'owner':
         return HttpResponseForbidden("You do not have permission to view this page.")
     dealers = Dealer.objects.select_related('user').all()
@@ -439,6 +519,7 @@ def view_dealers(request):
 
 @login_required
 def add_dealer(request):
+    # Restrict this view to users with 'owner' role
     if request.user.role != 'owner':
         return HttpResponseForbidden("You do not have permission to add dealers.")
     if request.method == 'POST':
@@ -449,10 +530,12 @@ def add_dealer(request):
             user.is_staff = True
             user.save()
             Group.objects.get_or_create(name='Dealers')[0].user_set.add(user)
+
             specialties = form.cleaned_data.get('job_specialty', [])
             other = form.cleaned_data.get('job_specialty_other','').strip()
             if 'Other' in specialties and other:
                 specialties = [s for s in specialties if s!='Other'] + [other]
+
             Dealer.objects.create(
                 user=user,
                 name=f"{user.first_name} {user.last_name}",
@@ -468,6 +551,7 @@ def add_dealer(request):
 
 @login_required
 def edit_dealer(request, dealer_id):
+     # Restrict this view to users with 'owner' role
     if request.user.role != 'owner':
         return HttpResponseForbidden("You do not have permission to edit dealers.")
     dealer = get_object_or_404(Dealer, id=dealer_id)
@@ -488,18 +572,22 @@ def edit_dealer(request, dealer_id):
 
 @login_required
 def delete_dealer(request, dealer_id):
+     # Restrict this view to users with 'owner' role
     if request.user.role != 'owner':
         return HttpResponseForbidden("You do not have permission to delete dealers.")
     dealer = get_object_or_404(Dealer, id=dealer_id)
     if request.method == 'POST':
+        # also remove the linked user
         if dealer.user:
             dealer.user.delete()
         messages.success(request, "Dealer deleted.")
         return redirect('view_dealers')
     return render(request, 'main/delete_dealer.html', {'dealer': dealer})
 
+
 @login_required
 def view_concierges(request):
+    # Restrict this view to users with 'owner' role
     if request.user.role != 'owner':
         return HttpResponseForbidden("You do not have permission to view this page.")
     concierges = User.objects.filter(role='concierge')
@@ -507,6 +595,7 @@ def view_concierges(request):
 
 @login_required
 def add_concierge(request):
+    # Restrict this view to users with 'owner' role
     if request.user.role != 'owner':
         return HttpResponseForbidden("You do not have permission to add concierges.")
     if request.method == 'POST':
@@ -525,6 +614,7 @@ def add_concierge(request):
 
 @login_required
 def edit_concierge(request, concierge_id):
+    # Restrict this view to users with 'owner' role
     if request.user.role != 'owner':
         return HttpResponseForbidden("You do not have permission to edit concierges.")
     concierge = get_object_or_404(User, id=concierge_id, role='concierge')
@@ -540,6 +630,7 @@ def edit_concierge(request, concierge_id):
 
 @login_required
 def delete_concierge(request, concierge_id):
+     # Restrict this view to users with 'owner' role
     if request.user.role != 'owner':
         return HttpResponseForbidden("You do not have permission to delete concierges.")
     concierge = get_object_or_404(User, id=concierge_id, role='concierge')
@@ -549,6 +640,7 @@ def delete_concierge(request, concierge_id):
         return redirect('view_concierges')
     return render(request, 'main/delete_concierge.html', {'concierge': concierge})
 
+
 # --------------------------
 # Invoices
 # --------------------------
@@ -556,12 +648,14 @@ def delete_concierge(request, concierge_id):
 def view_invoice(request, invoice_type, invoice_id):
     if invoice_type == 1:
         invoice = get_object_or_404(Invoice1, id=invoice_id)
+        # Restrict access to relevant users
         if request.user != invoice.service_request.customer and request.user.role not in ['owner']:
-            return HttpResponseForbidden("You do not have permission to view this invoice.")
+             return HttpResponseForbidden("You do not have permission to view this invoice.")
     elif invoice_type == 2:
         invoice = get_object_or_404(Invoice2, id=invoice_id)
-        if request.user.role not in ['owner', 'dealer']:
-            return HttpResponseForbidden("You do not have permission to view this invoice.")
+         # Restrict access to relevant users (adjust based on who should see Invoice2)
+        if request.user.role not in ['owner', 'dealer']: # Example: Owner and Dealer can see Invoice2
+             return HttpResponseForbidden("You do not have permission to view this invoice.")
     else:
         raise Http404("Invalid invoice type.")
     return render(request, 'main/view_invoice.html', {
@@ -571,26 +665,33 @@ def view_invoice(request, invoice_type, invoice_id):
 
 @login_required
 def edit_invoice(request, invoice_id):
+    # Restrict this view to users with 'owner' role
     if request.user.role != 'owner':
         return HttpResponseForbidden("You do not have permission to edit invoices.")
+
     invoice = (Invoice1.objects.filter(id=invoice_id).first()
                or Invoice2.objects.filter(id=invoice_id).first())
     if not invoice:
         messages.error(request, "Invoice not found.")
         return redirect("owner_dashboard")
+
     if request.method == "POST":
         old = invoice.payment_status
-        invoice.price = request.POST.get("price", invoice.price)
-        invoice.currency = request.POST.get("currency", invoice.currency)
+        invoice.price          = request.POST.get("price",       invoice.price)
+        invoice.currency       = request.POST.get("currency",    invoice.currency)
         new = request.POST.get("payment_status", invoice.payment_status)
         invoice.payment_status = new
-        invoice.updated_at = timezone.now()
+        invoice.updated_at     = timezone.now()
         invoice.save()
+
+        # bump SR back to Pending if it was waiting
         sr = invoice.service_request
-        if sr and old != "Paid" and new == "Paid" and sr.status == "Waiting for Payment":
+        if sr and old!="Paid" and new=="Paid" and sr.status=="Waiting for Payment":
             sr.status = "Pending"
             sr.save()
+
         messages.success(request, "Invoice updated.")
+        # Redirect based on which dashboard the user likely came from (owner)
         return redirect("owner_dashboard")
     else:
         form = (Invoice1Form(instance=invoice)
@@ -601,11 +702,13 @@ def edit_invoice(request, invoice_id):
             "invoice": invoice,
         })
 
+
 # --------------------------
 # Inventory
 # --------------------------
 @login_required
 def view_inventory(request):
+    # Restrict this view to users with 'owner' role
     if request.user.role != 'owner':
         return HttpResponseForbidden("You do not have permission to view this page.")
     items = Inventory.objects.all()
@@ -613,6 +716,7 @@ def view_inventory(request):
 
 @login_required
 def add_inventory(request):
+     # Restrict this view to users with 'owner' role
     if request.user.role != 'owner':
         return HttpResponseForbidden("You do not have permission to add inventory.")
     if request.method == 'POST':
@@ -627,6 +731,7 @@ def add_inventory(request):
 
 @login_required
 def edit_inventory(request, inventory_id):
+    # Restrict this view to users with 'owner' role
     if request.user.role != 'owner':
         return HttpResponseForbidden("You do not have permission to edit inventory.")
     item = get_object_or_404(Inventory, id=inventory_id)
@@ -646,6 +751,7 @@ def edit_inventory(request, inventory_id):
 @require_POST
 @login_required
 def delete_inventory(request, item_id):
+    # Restrict this view to users with 'owner' role
     if request.user.role != 'owner':
         return JsonResponse({'status':'error','message':'No permission'}, status=403)
     try:
@@ -660,48 +766,78 @@ def delete_inventory(request, item_id):
     except Inventory.DoesNotExist:
         return JsonResponse({'status':'error','message':'Not found'}, status=404)
 
+
 # --------------------------
-# Real-time Location Updates
+# Real-time Location Updates (Concierge Location API)
 # --------------------------
 
+# Endpoint for concierges to update their location
 @require_POST
 @login_required
-@user_passes_test(is_concierge)
+@user_passes_test(is_concierge) # Only concierges can update their location
 def update_concierge_location(request, request_id):
     sr = get_object_or_404(
         ServiceRequest,
         id=request_id,
-        assigned_to=request.user,
-        status='Delivery'
+        assigned_to=request.user, # Ensure the concierge is assigned to this request
+        status='Delivery' # Only allow updates when status is 'Delivery'
     )
     if not sr.share_location:
         return HttpResponseForbidden("Location sharing is not enabled for this request.")
+
     try:
         data = json.loads(request.body)
         latitude = data.get('lat')
         longitude = data.get('lng')
+
         if latitude is not None and longitude is not None:
             sr.concierge_latitude = latitude
             sr.concierge_longitude = longitude
-            sr.save(update_fields=['concierge_latitude', 'concierge_longitude'])
-            return JsonResponse({'success': True})
+            sr.share_location = True
+            sr.save()
+            messages.success(request, "Location updated successfully.")
+            return HttpResponse("Location updated successfully.")
         else:
-            return JsonResponse({'success': False, 'error': 'Invalid location data.'}, status=400)
+            return HttpResponseForbidden("Invalid location data.")
     except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+        return HttpResponseServerError(f"An error occurred: {str(e)}")
 
-@login_required
+# In main/views.py
+
+# ... other imports and views ...
+
+@login_required # Or use appropriate permissions
 def service_request_location(request, request_id):
-    sr = get_object_or_404(ServiceRequest, id=request_id)
-    if (
-        request.user != sr.customer
-        and request.user.role not in ['concierge','dealer','owner']
-    ):
-        return HttpResponseForbidden("No permission")
-    if sr.share_location and sr.concierge_latitude is not None and sr.concierge_longitude is not None:
-        return JsonResponse({
-            'lat': sr.concierge_latitude,
-            'lng': sr.concierge_longitude,
-        })
-    else:
-        return JsonResponse({'error': 'Location not available'}, status=404)
+    """
+    View to provide the live location of a service request.
+    """
+    try:
+        # Get the ServiceRequest object
+        service_request = get_object_or_404(ServiceRequest, id=request_id)
+
+        # Implement your logic to get the location.
+        # This might involve checking if the concierge is sharing location
+        # and retrieving their last reported location from the ServiceRequest model
+        # or another location-tracking mechanism.
+
+        # Example: Assuming location is stored in the ServiceRequest model
+        if service_request.share_location and service_request.concierge_latitude is not None and service_request.concierge_longitude is not None:
+            location_data = {
+                'latitude': service_request.concierge_latitude,
+                'longitude': service_request.concierge_longitude,
+                'request_id': service_request.id,
+                # Add any other relevant data like timestamp, status, etc.
+            }
+            return JsonResponse(location_data)
+        else:
+            # Return a response indicating location is not available or not being shared
+            return JsonResponse({'status': 'location_not_available'}, status=404) # Or a more appropriate status code
+
+    except Http404:
+        return JsonResponse({'status': 'error', 'message': 'Service request not found.'}, status=404)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+# ... rest of your views ...
+
+
