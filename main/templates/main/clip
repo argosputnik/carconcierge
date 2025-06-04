@@ -40,6 +40,11 @@
             {% endif %}
           </dd>
 
+          {% if service_request.assigned_dealer %}
+            <dt class="col-sm-3">Assigned Dealer</dt>
+            <dd class="col-sm-9">{{ service_request.assigned_dealer.name }}</dd>
+          {% endif %}
+
           {% if service_request.description %}
             <dt class="col-sm-3">Description</dt>
             <dd class="col-sm-9">{{ service_request.description }}</dd>
@@ -51,17 +56,18 @@
     <div class="card mb-4">
       <div class="card-header">Location Map</div>
       <div class="card-body">
+        <div
+          id="map"
+          style="height: 400px;"
+          data-pickup="{{ service_request.pickup_location|escapejs }}"
+          data-location-api-url="{{ location_api_url|default:'' }}"
+          data-assigned-to-name="{{ service_request.assigned_to.get_full_name|default:'Concierge'|escapejs }}"
+          {% if dealer_address %}
+            data-dealer-address="{{ dealer_address|escapejs }}"
+            data-dealer-name="{{ dealer_name|escapejs }}"
+          {% endif %}
+        ></div>
         <div id="map-message" class="alert alert-info mt-2" style="display:none;">Finding location...</div>
-	<div id="map" style="height: 400px;"
-  	data-pickup="{{ service_request.pickup_location|escapejs }}"
-  	data-location-api-url="{{ location_api_url|default:'' }}"
- 	data-assigned-to-name="{{ service_request.assigned_to.get_full_name|default:'Concierge'|escapejs }}"
-  	{% if dealer_address %}
-    	data-dealer-address="{{ dealer_address|escapejs }}"
-    	data-dealer-name="{{ dealer_name|escapejs }}"
-  	{% endif %}
-	></div>
-
       </div>
     </div>
 
@@ -96,19 +102,32 @@ document.addEventListener("DOMContentLoaded", function() {
       console.error("Map element not found!");
       return;
   }
-  const map = L.map("map").setView([0, 0], 2);
+  const map = L.map("map").setView([0, 0], 2); // Default view
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "© OpenStreetMap contributors"
   }).addTo(map);
 
   let pickupMarker = null;
+  let conciergeMarker = null;
   let dealerMarker = null;
   const messageEl = document.getElementById("map-message");
 
   // Get data attributes
   const pickupAddress = mapEl.dataset.pickup;
+  const locationApiUrl = mapEl.dataset.locationApiUrl;
+  const assignedToName = mapEl.dataset.assignedToName; // For concierge popup
   const dealerAddress = mapEl.dataset.dealerAddress;
   const dealerName = mapEl.dataset.dealerName;
+
+  // --- ADDED CONSOLE LOGS ---
+  console.log("--- MAP DATASET VALUES ---");
+  console.log("Pickup Address (from dataset):", pickupAddress);
+  console.log("Location API URL (from dataset):", locationApiUrl);
+  console.log("Assigned To Name (from dataset):", assignedToName);
+  console.log("Dealer Address (from dataset):", dealerAddress);
+  console.log("Dealer Name (from dataset):", dealerName);
+  console.log("--------------------------");
+  // --- END OF ADDED CONSOLE LOGS ---
 
   function updateMapMessage(text, type = 'info') {
       if (messageEl) {
@@ -120,73 +139,168 @@ document.addEventListener("DOMContentLoaded", function() {
 
   function formatAddress(address) {
     return String(address || "")
-      .replace(/\\u000A/g, ', ')
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line)
-      .join(', ');
+      .replace(/\\u000A/g, ', ') // Replace escaped newlines with commas
+      .split('\n')              // Split by actual newlines
+      .map(line => line.trim()) // Trim whitespace from each line
+      .filter(line => line)     // Remove empty lines
+      .join(', ');              // Join with commas
   }
 
   function fitMapToMarkers() {
-      const markers = [pickupMarker, dealerMarker].filter(Boolean);
+      const markers = [pickupMarker, conciergeMarker, dealerMarker].filter(Boolean); // Filter out null markers
       if (markers.length > 1) {
           const group = new L.featureGroup(markers);
           map.fitBounds(group.getBounds(), { padding: [50, 50] });
       } else if (markers.length === 1) {
-          map.setView(markers[0].getLatLng(), 16);
+          map.setView(markers[0].getLatLng(), 16); // Zoom in closer for a single marker
       }
+      // If no markers, map remains at default view
   }
 
   function geocodeAndDisplayPickupLocation(address) {
       const addressStr = String(address || "").trim();
+      console.log("[Pickup] Geocoding addressStr:", addressStr); // Log the address being used
       if (!addressStr) {
+          console.warn("No pickup address provided for map.");
           updateMapMessage("Pickup address not available.", "warning");
-          map.setView([41.7151, 44.8271], 12);
+          map.setView([41.7151, 44.8271], 12); // Default to Tbilisi if no address
           return;
       }
+
       updateMapMessage("Finding pickup location...", "info");
-      const geocodingAddress = formatAddress(addressStr);
+      const geocodingAddress = formatAddress(addressStr); // Use formatted address for geocoding
       fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(geocodingAddress)}&limit=1`)
-        .then(response => response.json())
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`Geocoding HTTP error! Status: ${response.status} for address: ${geocodingAddress}`);
+          }
+          return response.json();
+        })
         .then(data => {
+          console.log("[Pickup] Geocoding response data:", data);
           if (data && data.length > 0) {
             const lat = parseFloat(data[0].lat);
             const lon = parseFloat(data[0].lon);
+
             if (!isNaN(lat) && !isNaN(lon)) {
-              if (pickupMarker) {
+              if (pickupMarker) { // Remove old marker if it exists
                   map.removeLayer(pickupMarker);
               }
-              pickupMarker = L.marker([lat, lon])
+              pickupMarker = L.marker([lat, lon]) // Default blue marker
                 .addTo(map)
-                .bindPopup(`<b>Pickup:</b><br>${addressStr.replace(/\\u000A/g, '<br>')}`);
-              updateMapMessage("", "info");
+                .bindPopup(`<b>Pickup:</b><br>${addressStr.replace(/\\u000A/g, '<br>')}`); // Use original addressStr for popup
+              console.log("[Pickup] Marker created. Popup text:", `<b>Pickup:</b><br>${addressStr.replace(/\\u000A/g, '<br>')}`);
+              updateMapMessage("", "info"); // Clear message
               fitMapToMarkers();
+            } else {
+              throw new Error("Invalid coordinates received from geocoding service.");
             }
+          } else {
+            updateMapMessage(`Could not find pickup location for: "${geocodingAddress}". Please verify the address format.`, "warning");
+            map.setView([41.7151, 44.8271], 12); // Default to Tbilisi
           }
         })
         .catch(error => {
-          updateMapMessage(`Error finding pickup location: ${error.message}.`, "danger");
-          map.setView([41.7151, 44.8271], 12);
+          console.error("Error finding pickup location:", error);
+          updateMapMessage(`Error finding pickup location: ${error.message}. Check address format.`, "danger");
+          map.setView([41.7151, 44.8271], 12); // Default to Tbilisi
         });
   }
 
+  function fetchAndDisplayConciergeLocation() {
+      console.log("[Concierge] Attempting to fetch location. API URL:", locationApiUrl);
+      if (locationApiUrl) {
+          fetch(locationApiUrl)
+              .then(response => {
+                  console.log("[Concierge] Fetch response status:", response.status);
+                  if (!response.ok) {
+                      if (response.status === 404 || response.status === 403) { // Handle not found or forbidden
+                          if (conciergeMarker) { // Remove old marker if location becomes unavailable
+                              map.removeLayer(conciergeMarker);
+                              conciergeMarker = null;
+                          }
+                          // Don't throw an error that stops other map functions, just log and update message
+                          console.warn(`Concierge location not available (status ${response.status}).`);
+                          updateMapMessage(`Concierge location not available.`, "info");
+                          return Promise.reject(new Error(`Concierge location not available (status ${response.status})`)); // Propagate rejection
+                      }
+                      throw new Error(`HTTP error fetching concierge location! Status: ${response.status}`);
+                  }
+                  return response.json();
+              })
+              .then(data => {
+                  console.log("[Concierge] Fetched data:", data);
+                  const lat = parseFloat(data.lat);
+                  const lon = parseFloat(data.lng);
+
+                  if (!isNaN(lat) && !isNaN(lon)) {
+                      if (conciergeMarker) {
+                          conciergeMarker.setLatLng([lat, lon]);
+                      } else {
+                          conciergeMarker = L.marker([lat, lon], {
+                              icon: L.icon({ // Red marker for concierge
+                                  iconUrl: "{% static 'images/marker-icon-red.png' %}",
+                                  iconSize: [25, 41],
+                                  iconAnchor: [12, 41],
+                                  popupAnchor: [1, -34],
+                                  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+                                  shadowSize: [41, 41],
+                                  shadowAnchor: [12, 41]
+                              })
+                          })
+                          .addTo(map)
+                          .bindPopup(`<b>${assignedToName || 'Concierge'}'s Location</b>`);
+                      }
+                      fitMapToMarkers();
+                      updateMapMessage("", "info"); // Clear message if successful
+                  } else {
+                      console.warn("Invalid coordinates received for concierge location.");
+                      updateMapMessage("Invalid concierge location data.", "warning");
+                  }
+              })
+              .catch(error => {
+                  // Error already logged by the first .catch or if promise was rejected
+                  // updateMapMessage is handled by the first catch or if no locationApiUrl
+                  console.error("[Concierge] Final error in fetching/displaying location:", error.message);
+              });
+      } else {
+          console.log("[Concierge] No locationApiUrl provided.");
+          if (conciergeMarker) { // Remove marker if API URL becomes unavailable
+               map.removeLayer(conciergeMarker);
+               conciergeMarker = null;
+          }
+          updateMapMessage("Concierge location updates are not available for this request.", "info");
+      }
+  }
+
   function geocodeAndDisplayDealerLocation(address, name) {
-      if (!address) return;
+      console.log("[Dealer] Attempting to geocode. Address:", address, "Name:", name);
+      if (!address) {
+          console.log("[Dealer] No dealer address provided.");
+          return;
+      }
       updateMapMessage("Finding dealer location...", "info");
-      const geocodingAddress = formatAddress(address);
+      const geocodingAddress = formatAddress(address); // Use formatted address
       fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(geocodingAddress)}&limit=1`)
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Dealer Geocoding HTTP error! Status: ${response.status} for address: ${geocodingAddress}`);
+            }
+            return response.json();
+        })
         .then(data => {
+          console.log("[Dealer] Geocoding response data:", data);
           if (data && data.length > 0) {
             const lat = parseFloat(data[0].lat);
             const lon = parseFloat(data[0].lon);
             if (!isNaN(lat) && !isNaN(lon)) {
-              if (dealerMarker) {
+              if (dealerMarker) { // Remove old marker
                   map.removeLayer(dealerMarker);
               }
+              // Using RED marker for dealer as per previous request, change if needed
               dealerMarker = L.marker([lat, lon], {
                   icon: L.icon({
-                      iconUrl: "{% static 'images/marker-icon-red.png' %}",
+                      iconUrl: "{% static 'images/marker-icon-red.png' %}", // Changed to red
                       iconSize: [25, 41],
                       iconAnchor: [12, 41],
                       popupAnchor: [1, -34],
@@ -196,30 +310,58 @@ document.addEventListener("DOMContentLoaded", function() {
                   })
               })
               .addTo(map)
-              .bindPopup(`<b>Dealer Address:</b><br>${address.replace(/\\u000A/g, '<br>')}`);
+              .bindPopup(`<b>Dealer:</b> ${name || 'Dealer'}<br>${address.replace(/\\u000A/g, '<br>')}`); // Use original address for popup
               fitMapToMarkers();
-              updateMapMessage("", "info");
+              updateMapMessage("", "info"); // Clear message
+            } else {
+                throw new Error("Invalid coordinates received for dealer from geocoding service.");
             }
+          } else {
+            updateMapMessage(`Could not find dealer location for: "${geocodingAddress}".`, "warning");
           }
         })
         .catch(error => {
+          console.error("Error finding dealer location:", error);
           updateMapMessage(`Error finding dealer location: ${error.message}`, "danger");
         });
   }
 
-  // Initialize map and display the pickup and dealer location
-  requestAnimationFrame(() => {
-    if (mapEl.offsetParent !== null) {
+  // Initialize map and display locations
+  requestAnimationFrame(() => { // Ensures map is visible before invalidating size
+    if (mapEl.offsetParent !== null) { // Check if map container is visible
         map.invalidateSize();
     }
+    // Slight delay to ensure map container has its dimensions set, especially if in a tab or modal
     setTimeout(() => {
         geocodeAndDisplayPickupLocation(pickupAddress);
-        if (dealerAddress) {
+        fetchAndDisplayConciergeLocation(); // Call this regardless of API URL, function handles null
+        if (dealerAddress) { // Only call if dealerAddress is present
             geocodeAndDisplayDealerLocation(dealerAddress, dealerName);
         }
     }, 250);
   });
+
+  // Polling for concierge location if API URL is available
+  let pollingInterval = null;
+  if (locationApiUrl) {
+     pollingInterval = setInterval(fetchAndDisplayConciergeLocation, 15000); // Poll every 15 seconds
+     // Clean up interval when the window is closed or navigated away
+     window.addEventListener('beforeunload', function() {
+         clearInterval(pollingInterval);
+     });
+  }
+
+  // Warn concierge if page loses focus (live tracking will pause)
+  {% if request.user.role == 'concierge' and service_request.assigned_to and service_request.assigned_to.id == request.user.id and service_request.status == 'Delivery' %}
+  document.addEventListener('visibilitychange', function() {
+      if (document.hidden) {
+          // Consider a less intrusive notification if alert is too disruptive
+          // For example, update a status message on the page
+          console.warn("Page hidden. Live tracking might be paused by browser.");
+          // alert("Live tracking will pause if you leave this page or your phone locks.");
+      }
+  });
+  {% endif %}
 });
 </script>
 {% endblock %}
-
